@@ -623,6 +623,7 @@ body{font-family:'Nunito','Noto Sans JP',sans-serif;background:var(--bg);color:v
       <div class="tbar">
         <div><div class="tbar-title" id="tt-chat">AIに話しかける</div><div class="tbar-sub">なんでも気軽にどうぞ</div></div>
         <div class="tbar-right" id="app-lang-sw">
+          <div id="api-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);cursor:help;flex-shrink:0;" title="API状態確認中…"></div>
           <button class="chip on" onclick="swLang('ja','🇯🇵',this)">JA</button>
           <button class="chip" onclick="swLang('en','🇺🇸',this)">EN</button>
           <button class="chip" onclick="swLang('zh','🇨🇳',this)">中</button>
@@ -635,7 +636,7 @@ body{font-family:'Nunito','Noto Sans JP',sans-serif;background:var(--bg);color:v
         <div class="input-row">
           <button class="ibtn" id="vc-chat" onclick="toggleVC('chat')" title="音声入力"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 19v4M8 23h8"/></svg></button>
           <textarea class="ta" id="chat-in" rows="1" oninput="ah(this)" onkeydown="ck(event)" placeholder="メッセージを入力…"></textarea>
-          <button class="sbtn2" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+          <button class="sbtn2" id="chat-send" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
         </div>
       </div>
     </div>
@@ -711,7 +712,7 @@ body{font-family:'Nunito','Noto Sans JP',sans-serif;background:var(--bg);color:v
           <div class="ai-q-sub">「3月15日に何がありましたか？」「先週のカスハラをまとめて」「田中さんの最近の状況は？」など自由に聞けます。</div>
           <div class="input-row">
             <textarea class="ta" id="arch-q" rows="2" placeholder="質問を入力してください…" style="border-radius:var(--r-lg)"></textarea>
-            <button class="sbtn2" onclick="archQuery()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+            <button class="sbtn2" id="arch-qbtn" onclick="archQuery()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
           </div>
         </div>
         <div id="arch-ai-res"></div>
@@ -838,6 +839,43 @@ body{font-family:'Nunito','Noto Sans JP',sans-serif;background:var(--bg);color:v
 <div id="toast-root"></div>
 
 <script>
+const API_ENDPOINT = '/api/chat';
+
+async function callAI(system, messages, max_tokens) {
+  const payload = { messages: messages || [], max_tokens: max_tokens || 1000 };
+  if (system) payload.system = system;
+  const r = await fetch(API_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    if (r.status === 500 && e.error && e.error.includes('API key')) {
+      throw new Error('APIキーが未設定です。\nVercel → Settings → Environment Variables\n→ ANTHROPIC_API_KEY を追加してください。');
+    }
+    throw new Error(e.error || 'HTTP ' + r.status);
+  }
+  const d = await r.json();
+  return d.content?.[0]?.text || '';
+}
+
+async function checkAPIStatus() {
+  const dot = document.getElementById('api-dot');
+  if (!dot) return;
+  dot.style.background = 'var(--lemon)';
+  dot.title = '確認中…';
+  try {
+    await callAI('test', [{role:'user', content:'hi'}], 5);
+    dot.style.background = 'var(--mint)';
+    dot.title = 'AI接続 OK ✓';
+  } catch(e) {
+    dot.style.background = 'var(--rose)';
+    dot.title = '要設定: ANTHROPIC_API_KEY';
+  }
+}
+
+
 /* ══════════ STATE & DB ══════════ */
 const S={lang:'ja',role:'staff',name:'',company:'',history:[],careHistory:[],careType:'gutti',sev:'low',rec:{chat:false,care:false,rep:false},SR:null,kCat:'all',archType:'all'};
 const DB={
@@ -915,7 +953,7 @@ function launch(){
   document.getElementById('app').classList.add('on');
   document.getElementById('rail-user').textContent=nm.charAt(0).toUpperCase();
   if(S.role==='staff')document.getElementById('dash-rib').style.display='none';
-  initChat();buildQP();renderFAQ();updateDash();renderArch();
+  initChat();buildQP();renderFAQ();updateDash();renderArch();checkAPIStatus();
 }
 
 /* ══════════ NAV ══════════ */
@@ -973,22 +1011,29 @@ function swLang(l,flag,btn){
 }
 
 async function sendChat(){
-  const inp=document.getElementById('chat-in');
-  const txt=inp.value.trim();if(!txt)return;
-  inp.value='';ah(inp);
-  addMsg('chat-msgs','u',txt);
-  const tid=showTyping('chat-msgs');
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys_chat(),messages:[...S.history,{role:'user',content:txt}]})});
-    const d=await r.json();
+
+  const inp = document.getElementById('chat-in');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value = ''; ah(inp);
+  addMsg('chat-msgs', 'u', txt);
+  const tid = showTyping('chat-msgs');
+  const sendBtn = document.getElementById('chat-send');
+  if (sendBtn) sendBtn.disabled = true;
+  try {
+    const sysFn = typeof sys_chat === 'function' ? sys_chat : () => L.ja.sys(S.company, S.name, S.role);
+    const rep = await callAI(sysFn(), [...S.history, {role:'user', content:txt}]);
     removeTyping(tid);
-    const rep=d.content?.[0]?.text||'申し訳ありません。もう一度お試しください。';
-    addMsg('chat-msgs','ai',rep);
-    S.history.push({role:'user',content:txt},{role:'assistant',content:rep});
-    if(S.history.length>20)S.history=S.history.slice(-20);
-    DB.addLog({id:uid(),date:today(),time:nowt(),staffName:S.name,role:S.role,type:'chat',content:txt,aiResponse:rep.slice(0,200),sev:'low',tags:['チャット']});
-  }catch{removeTyping(tid);addMsg('chat-msgs','ai','⚠️ 接続エラーです。APIキーをご確認ください。\n\n(Demo mode — Anthropic API key required for AI responses.)');}
+    addMsg('chat-msgs', 'ai', rep);
+    S.history.push({role:'user', content:txt}, {role:'assistant', content:rep});
+    if (S.history.length > 20) S.history = S.history.slice(-20);
+    DB.addLog({id:uid(), date:today(), time:nowt(), staffName:S.name, role:S.role, type:'chat', content:txt, aiResponse:rep.slice(0,200), sev:'low', tags:['チャット']});
+  } catch(e) {
+    removeTyping(tid);
+    addMsg('chat-msgs', 'ai', '⚠️ ' + e.message);
+  }
+  if (sendBtn) sendBtn.disabled = false;
+
 }
 
 /* ══════════ CARE ══════════ */
@@ -1015,24 +1060,32 @@ function setSev(s,btn){
   btn.classList.add('on',{low:'lo',med:'me',high:'hi'}[s]);
 }
 async function sendCare(){
-  const inp=document.getElementById('care-in');
-  const txt=inp.value.trim();if(!txt)return;
-  if(!careActive){toast('種別を選んでください','err');return;}
-  inp.value='';ah(inp);
-  addMsg('care-msgs','u',txt);
-  const tid=showTyping('care-msgs');
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys_care(),messages:[...S.careHistory,{role:'user',content:txt}]})});
-    const d=await r.json();
+
+  const inp = document.getElementById('care-in');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  if (!careActive) { toast('種別を選んでください', 'err'); return; }
+  inp.value = ''; ah(inp);
+  addMsg('care-msgs', 'u', txt);
+  const tid = showTyping('care-msgs');
+  const sendBtn = document.getElementById('care-send');
+  if (sendBtn) sendBtn.disabled = true;
+  try {
+    const sysFn = typeof sysCAR === 'function' ? sysCAR : () => L.ja.careSys(S.company, S.name, S.careType, S.sev || S.severity);
+    const rep = await callAI(sysFn(), [...S.careHistory, {role:'user', content:txt}]);
     removeTyping(tid);
-    const rep=d.content?.[0]?.text||'';
-    addMsg('care-msgs','ai',rep,null,true);
-    S.careHistory.push({role:'user',content:txt},{role:'assistant',content:rep});
-    if(S.careHistory.length>20)S.careHistory=S.careHistory.slice(-20);
-    const tl={kasuhara:'カスハラ',gutti:'愚痴',stress:'ストレス',other:'相談'};
-    DB.addLog({id:uid(),date:today(),time:nowt(),staffName:S.name,role:S.role,type:S.careType,content:txt,aiResponse:rep.slice(0,200),sev:S.sev,tags:[tl[S.careType],S.sev==='high'?'要対応':''].filter(Boolean)});
-  }catch{removeTyping(tid);addMsg('care-msgs','ai','⚠️ 接続エラーです。');}
+    addMsg('care-msgs', 'ai', rep, null, true);
+    S.careHistory.push({role:'user', content:txt}, {role:'assistant', content:rep});
+    if (S.careHistory.length > 20) S.careHistory = S.careHistory.slice(-20);
+    const tl = {kasuhara:'カスハラ', gutti:'愚痴', stress:'ストレス', other:'相談'};
+    const sev = S.sev || S.severity || 'low';
+    DB.addLog({id:uid(), date:today(), time:nowt(), staffName:S.name, role:S.role, type:S.careType, content:txt, aiResponse:rep.slice(0,200), sev:sev, tags:[tl[S.careType], sev==='high'?'要対応':''].filter(Boolean)});
+  } catch(e) {
+    removeTyping(tid);
+    addMsg('care-msgs', 'ai', '⚠️ ' + e.message, null, true);
+  }
+  if (sendBtn) sendBtn.disabled = false;
+
 }
 
 /* ══════════ MSG HELPERS ══════════ */
@@ -1098,10 +1151,21 @@ function toggleRV(){
 /* ══════════ REPORT ══════════ */
 function chk(el){el.classList.toggle('done');}
 async function aiSum(){
-  const b=document.getElementById('r-body').value,iss=document.getElementById('r-iss').value,h=document.getElementById('r-hand').value;
-  if(!b&&!iss&&!h){toast('内容を入力してください','err');return;}
-  toast('AIが整理中…','ok');
-  try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:`${S.name}の日報を管理者向けに簡潔に整理：\n報告:${b}\n問題:${iss}\n引継ぎ:${h}`}]})});const d=await r.json();const s=d.content?.[0]?.text;if(s){document.getElementById('r-body').value=s;toast('要約完了 ✓','ok');}}catch{toast('AI要約失敗','err');}
+
+  const b = document.getElementById('r-body').value;
+  const iss = document.getElementById('r-iss').value;
+  const h = document.getElementById('r-hand').value;
+  if (!b && !iss && !h) { toast('内容を入力してください', 'err'); return; }
+  toast('AIが整理中…', 'ok');
+  try {
+    const s = await callAI(
+      `${S.name}の日報を管理者向けに簡潔に整理してください。`,
+      [{role:'user', content:`報告:${b}\n問題:${iss}\n引継ぎ:${h}`}],
+      600
+    );
+    if (s) { document.getElementById('r-body').value = s; toast('要約完了 ✓', 'ok'); }
+  } catch(e) { toast('AI要約失敗: ' + e.message, 'err'); }
+
 }
 async function submitRep(){
   const b=document.getElementById('r-body').value;if(!b){toast('報告内容を入力してください','err');return;}
@@ -1220,16 +1284,27 @@ function showStaffDet(id){
 }
 function backToGrid(){document.getElementById('staff-grid').style.display='grid';document.getElementById('staff-det').style.display='none';}
 async function archQuery(){
-  const q=document.getElementById('arch-q').value.trim();if(!q){toast('質問を入力してください','err');return;}
-  const res=document.getElementById('arch-ai-res');
-  res.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:14px;color:var(--text3)"><div class="spinner"></div>分析中…</div>`;
-  const logs=DB.logs();
-  const logsStr=logs.slice(0,100).map(l=>`[${l.date} ${l.time}] ${l.staffName}/${l.type}/深刻:${l.sev||'-'}\n${l.content}`).join('\n---\n');
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`${S.company}のスタッフ記録データ：\n${logsStr||'（データなし）'}\n\n質問：${q}\n\n温かい言葉で、具体的に答えてください。データがない場合はその旨を伝えてください。`}]})});
-    const d=await r.json();const rep=d.content?.[0]?.text||'回答を取得できませんでした。';
-    res.innerHTML=`<div class="ai-q-result"><div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">AI 分析結果</div><div style="font-size:13px;color:var(--text);line-height:1.8">${fmtText(rep)}</div></div>`;
-  }catch{res.innerHTML=`<div style="color:var(--rose);font-size:12px;padding:12px">⚠️ 接続エラーです。</div>`;}
+
+  const q = document.getElementById('arch-q').value.trim();
+  if (!q) { toast('質問を入力してください', 'err'); return; }
+  const res = document.getElementById('arch-ai-res');
+  res.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:14px;color:var(--text3)"><div class="spinner"></div>分析中…</div>';
+  const qBtn = document.getElementById('arch-qbtn');
+  if (qBtn) qBtn.disabled = true;
+  const logs = DB.logs();
+  const logsStr = logs.slice(0,100).map(l => `[${l.date} ${l.time}] ${l.staffName}/${l.type}/深刻:${l.sev||'-'}\n${l.content}`).join('\n---\n');
+  try {
+    const rep = await callAI(
+      `${S.company}のスタッフ記録データ担当AIです。温かい言葉で具体的に答えてください。データがない場合はその旨を伝えてください。`,
+      [{role:'user', content:`データ:\n${logsStr||'（データなし）'}\n\n質問：${q}`}],
+      1000
+    );
+    res.innerHTML = `<div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px"><div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">AI 分析結果</div><div style="font-size:13px;color:var(--text);line-height:1.8">${fmtText(rep)}</div></div>`;
+  } catch(e) {
+    res.innerHTML = `<div style="color:var(--rose);font-size:12px;padding:12px">⚠️ エラー: ${e.message}</div>`;
+  }
+  if (qBtn) qBtn.disabled = false;
+
 }
 
 /* ══════════ DASHBOARD ══════════ */
@@ -1261,20 +1336,29 @@ function dTab(tab,btn){
   document.getElementById('dv-ins').style.display=tab==='ins'?'block':'none';
 }
 async function genInsight(){
-  const btn=document.querySelector('.ins-btn');btn.innerHTML=`<div class="spinner"></div> 分析中…`;btn.disabled=true;
-  const logs=DB.logs();
-  const logsStr=logs.slice(0,100).map(l=>`[${l.date}] ${l.staffName}(${l.role})/${l.type}/深刻:${l.sev||'-'}/${(l.content||'').slice(0,80)}`).join('\n');
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,
-        system:`優秀な経営コンサルタントとして${S.company}の経営者向け提言をJSONで返してください。形式：[{"title":"タイトル","icon":"絵文字","color":"mint|peach|lav|sky","body":"説明2〜3文","action":"具体的アクション"}]。3〜5件。JSONのみ返すこと。`,
-        messages:[{role:'user',content:`分析データ：\n${logsStr||'（まだデータがありません）'}\n\n上記を踏まえて経営改善提言をください。`}]})});
-    const d=await r.json();let txt=d.content?.[0]?.text||'[]';txt=txt.replace(/```json?|```/g,'').trim();
-    let items;try{items=JSON.parse(txt);}catch{items=[{title:'分析完了',icon:'💡',color:'mint',body:'データに基づいた提言を生成しました。継続的に記録を蓄積することでより精度が上がります。',action:'スタッフに記録を促してください'}];}
-    const cm={mint:'linear-gradient(135deg,var(--mint),#3BBCAE)',peach:'linear-gradient(135deg,var(--peach),#FF6B4A)',lav:'linear-gradient(135deg,var(--lav),#9B8AE8)',sky:'linear-gradient(135deg,var(--sky),#4A9EE0)'};
-    document.getElementById('ins-cards').innerHTML=items.map(it=>`<div class="ic"><div class="ic-head"><div class="ic-ico" style="background:${cm[it.color]||cm.mint}"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:white"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 4v8M12 17h.01"/></svg></div><div class="ic-ttl">${it.icon||'💡'} ${it.title}</div></div><div class="ic-body">${it.body}</div><button class="ic-act" onclick="chatFromInsight('${(it.action||'').replace(/'/g,'&apos;')}')">→ ${it.action||'詳しく聞く'}</button></div>`).join('');
-  }catch{document.getElementById('ins-cards').innerHTML=`<div style="color:var(--rose);font-size:12px;padding:14px">⚠️ 接続エラーです。</div>`;}
-  btn.innerHTML=`<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:var(--lav)"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 4v8M12 17h.01"/></svg> 再分析する`;btn.disabled=false;
+
+  const btn = document.getElementById('ins-btn');
+  if (btn) { btn.innerHTML = '<div class="spinner" style="border-top-color:var(--lav)"></div> 分析中…'; btn.disabled = true; }
+  const logs = DB.logs();
+  const logsStr = logs.slice(0,100).map(l => `[${l.date}] ${l.staffName}(${l.role})/${l.type}/深刻:${l.sev||'-'}/${(l.content||'').slice(0,80)}`).join('\n');
+  try {
+    const rawTxt = await callAI(
+      `優秀な経営コンサルタントとして${S.company}の経営者向け提言をJSONで返してください。形式：[{"title":"タイトル","icon":"絵文字","color":"mint|peach|lav|sky","body":"説明2〜3文","action":"具体的アクション"}]。3〜5件。JSONのみ返すこと。`,
+      [{role:'user', content:`分析データ：\n${logsStr||'（まだデータがありません）'}\n\n上記を踏まえて経営改善提言をください。`}],
+      1500
+    );
+    let items;
+    try { items = JSON.parse(rawTxt.replace(/```json?|```/g,'').trim()); }
+    catch { items = [{title:'提言生成完了', icon:'💡', color:'mint', body:'記録が蓄積されると、より精度の高い提言が生成されます。', action:'スタッフに記録を促してください'}]; }
+    const cm = {mint:'linear-gradient(135deg,var(--mint),#3BBCAE)', peach:'linear-gradient(135deg,var(--peach),#FF6B4A)', lav:'linear-gradient(135deg,var(--lav),#9B8AE8)', sky:'linear-gradient(135deg,var(--sky),#4A9EE0)'};
+    document.getElementById('ins-cards').innerHTML = items.map(it =>
+      `<div class="ic"><div class="ic-head"><div class="ic-ico" style="background:${cm[it.color]||cm.mint}"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:white"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 4v8M12 17h.01"/></svg></div><div class="ic-ttl">${it.icon||'💡'} ${it.title}</div></div><div class="ic-body">${it.body}</div><button class="ic-act" onclick="chatFromIns(this)">→ ${it.action||'詳しく聞く'}</button></div>`
+    ).join('');
+  } catch(e) {
+    document.getElementById('ins-cards').innerHTML = `<div style="color:var(--rose);font-size:12px;padding:14px">⚠️ エラー: ${e.message}</div>`;
+  }
+  if (btn) { btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:var(--lav)"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 4v8M12 17h.01"/></svg> 再分析する'; btn.disabled = false; }
+
 }
 function chatFromInsight(action){gp('chat',document.querySelector('.rib'));document.getElementById('chat-in').value=action;sendChat();}
 
