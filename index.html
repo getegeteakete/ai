@@ -145,7 +145,7 @@ body{font-family:'Nunito','Noto Sans JP',sans-serif;background:var(--bg);color:v
 .staff-opt-role{font-size:10px;color:var(--text3);margin-left:auto;}
 
 /* name + company row (always visible) */
-.login-fields{padding:18px 20px 4px;}
+.login-fields{padding:18px 20px 16px;}
 .field-in{
   width:100%;background:var(--bg);
   border:1.5px solid var(--border);border-radius:var(--r);
@@ -155,6 +155,19 @@ body{font-family:'Nunito','Noto Sans JP',sans-serif;background:var(--bg);color:v
 }
 .field-in:focus{border-color:var(--peach);box-shadow:0 0 0 3px rgba(255,139,106,.1);}
 .field-in::placeholder{color:var(--text3);}
+.field-select{
+  width:100%;background:var(--bg);
+  border:1.5px solid var(--border);border-radius:var(--r);
+  color:var(--text);font-size:14px;font-weight:500;
+  padding:12px 18px;font-family:inherit;outline:none;
+  margin-bottom:10px;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C0BAB3' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;background-size:16px;
+  cursor:pointer;transition:all .2s;
+}
+.field-select:focus{border-color:var(--peach);box-shadow:0 0 0 3px rgba(255,139,106,.1);}
+.field-select:hover{border-color:var(--peach-md);}
 
 /* start button */
 .login-action{padding:16px 20px 20px;}
@@ -529,68 +542,20 @@ body{font-family:'Nunito','Noto Sans JP',sans-serif;background:var(--bg);color:v
       <div class="login-fields">
         <input class="field-in" id="f-company" type="text" placeholder="会社・店舗名（例：山田屋 本店）"/>
         <input class="field-in" id="f-name" type="text" placeholder="お名前"/>
-      </div>
-
-      <!-- ROLE (expandable) -->
-      <div class="exp-row" id="er-role">
-        <button class="exp-trigger" onclick="toggleExp('er-role')">
-          <span class="exp-label">ロール</span>
-          <span style="display:flex;align-items:center;gap:4px">
-            <span class="exp-value set" id="ev-role">スタッフ</span>
-            <svg class="exp-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-        </button>
-        <div class="exp-body">
-          <div class="role-group">
-            <div class="role-card on" onclick="pickRole('staff',this)">
-              <svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="5"/><path d="M6 28c0-6 4.5-10 10-10s10 4 10 10"/></svg>
-              <div class="rn" id="rl-staff">スタッフ</div>
-            </div>
-            <div class="role-card" onclick="pickRole('manager',this)">
-              <svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"/><path d="M8 28c0-5 3.5-9 8-9s8 4 8 9"/><rect x="10" y="17" width="12" height="2" rx="1"/></svg>
-              <div class="rn" id="rl-manager">店長・上司</div>
-            </div>
-            <div class="role-card" onclick="pickRole('owner',this)">
-              <svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"/><path d="M8 28c0-5 3.5-9 8-9s8 4 8 9"/><path d="M16 2l1.5 3.2 3.5.5-2.5 2.5.5 3.5L16 10l-3 1.5.5-3.5-2.5-2.4 3.5-.5z"/></svg>
-              <div class="rn" id="rl-owner">オーナー</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- LANGUAGE (expandable) -->
-      <div class="exp-row" id="er-lang">
-        <button class="exp-trigger" onclick="toggleExp('er-lang')">
-          <span class="exp-label">言語 / Language</span>
-          <span style="display:flex;align-items:center;gap:4px">
-            <span class="exp-value set" id="ev-lang">🇯🇵 日本語</span>
-            <svg class="exp-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-        </button>
-        <div class="exp-body">
-          <div class="pill-group">
-            <button class="pill on" onclick="setLang('ja','🇯🇵 日本語',this)">🇯🇵 日本語</button>
-            <button class="pill" onclick="setLang('en','🇺🇸 English',this)">🇺🇸 English</button>
-            <button class="pill" onclick="setLang('zh','🇨🇳 中文',this)">🇨🇳 中文</button>
-            <button class="pill" onclick="setLang('vi','🇻🇳 Tiếng Việt',this)">🇻🇳 Tiếng Việt</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- EXISTING STAFF (expandable, optional) -->
-      <div class="exp-row" id="er-staff">
-        <button class="exp-trigger" onclick="toggleExp('er-staff')">
-          <span class="exp-label">登録済みスタッフから選ぶ</span>
-          <span style="display:flex;align-items:center;gap:4px">
-            <span class="exp-value" id="ev-staff">（任意）</span>
-            <svg class="exp-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-        </button>
-        <div class="exp-body">
-          <div class="staff-list-exp" id="staff-list-exp">
-            <div style="font-size:12px;color:var(--text3);padding:8px">登録されたスタッフがいません。名前を入力してスタートしてください。</div>
-          </div>
-        </div>
+        <select class="field-select" id="sel-role" onchange="S.role=this.value">
+          <option value="staff">スタッフ</option>
+          <option value="manager">店長・上司</option>
+          <option value="owner">オーナー</option>
+        </select>
+        <select class="field-select" id="sel-lang" onchange="S.lang=this.value">
+          <option value="ja">🇯🇵 日本語</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="zh">🇨🇳 中文</option>
+          <option value="vi">🇻🇳 Tiếng Việt</option>
+        </select>
+        <select class="field-select" id="sel-staff" onchange="fillFromStaff(this.value)" style="margin-bottom:0">
+          <option value="">— 登録済みスタッフから選ぶ（任意）—</option>
+        </select>
       </div>
 
       <div class="login-action">
@@ -890,65 +855,36 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function today(){return new Date().toISOString().slice(0,10);}
 function nowt(){return new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});}
 
-/* ══════════ LOGIN EXPANDABLE ══════════ */
-function toggleExp(id){
-  const row=document.getElementById(id);
-  row.classList.toggle('open');
-}
-function setLang(l,label,btn){
-  S.lang=l;
-  document.querySelectorAll('#er-lang .pill').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('ev-lang').textContent=label;
-}
-function pickRole(r,el){
-  S.role=r;
-  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  const labels={staff:'スタッフ',manager:'店長・上司',owner:'オーナー'};
-  document.getElementById('ev-role').textContent=labels[r];
-}
-
-/* ══════════ STAFF LIST on LOGIN ══════════ */
+/* ══════════ LOGIN SELECTS ══════════ */
 function loadLoginStaff(){
   const sm=DB.staff();
-  const list=document.getElementById('staff-list-exp');
-  const entries=Object.entries(sm);
-  const avColors=['linear-gradient(135deg,var(--peach),#FF6B4A)','linear-gradient(135deg,var(--mint),var(--sky))','linear-gradient(135deg,var(--lav),#9B8AE8)','linear-gradient(135deg,var(--lemon),#E8C040)'];
-  if(entries.length===0){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px">まだ登録されていません</div>';return;}
-  list.innerHTML=entries.map(([id,info],i)=>`
-    <div class="staff-opt" onclick="selectStaff('${id}',this)">
-      <div class="staff-av" style="background:${avColors[i%avColors.length]}">${(info.name||'U').charAt(0)}</div>
-      <div class="staff-opt-name">${info.name}</div>
-      <div class="staff-opt-role">${{staff:'スタッフ',manager:'店長',owner:'オーナー'}[info.role]||info.role}</div>
-    </div>
-  `).join('');
+  const sel=document.getElementById('sel-staff');
+  if(!sel)return;
+  while(sel.options.length>1)sel.remove(1);
+  Object.entries(sm).forEach(([id,info])=>{
+    const opt=document.createElement('option');
+    opt.value=id;
+    opt.textContent=`${info.name}（${{staff:'スタッフ',manager:'店長',owner:'オーナー'}[info.role]||info.role}）`;
+    sel.appendChild(opt);
+  });
 }
-function selectStaff(id,el){
-  const sm=DB.staff();
-  const info=sm[id];if(!info)return;
-  document.querySelectorAll('.staff-opt').forEach(o=>o.classList.remove('on'));
-  el.classList.add('on');
+function fillFromStaff(id){
+  if(!id)return;
+  const info=DB.staff()[id];if(!info)return;
   document.getElementById('f-name').value=info.name;
   document.getElementById('f-company').value=info.company||'';
-  // auto-select role
+  document.getElementById('sel-role').value=info.role||'staff';
   S.role=info.role||'staff';
-  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('on'));
-  const roleMap={staff:0,manager:1,owner:2};
-  const cards=document.querySelectorAll('.role-card');
-  if(cards[roleMap[S.role]])cards[roleMap[S.role]].classList.add('on');
-  const labels={staff:'スタッフ',manager:'店長・上司',owner:'オーナー'};
-  document.getElementById('ev-role').textContent=labels[S.role]||S.role;
-  document.getElementById('ev-staff').textContent=info.name;
 }
 
 /* ══════════ LAUNCH ══════════ */
 function launch(){
   const co=document.getElementById('f-company').value.trim()||'あなたの会社';
   const nm=document.getElementById('f-name').value.trim()||'スタッフ';
+  S.role=document.getElementById('sel-role')?.value||S.role||'staff';
+  S.lang=document.getElementById('sel-lang')?.value||S.lang||'ja';
   S.company=co;S.name=nm;
-  const sid=nm+'_'+S.role;
-  DB.addStaff(sid,{name:nm,role:S.role,company:co,since:today()});
+  DB.addStaff(nm+'_'+S.role,{name:nm,role:S.role,company:co,since:today()});
   document.getElementById('login').style.display='none';
   document.getElementById('app').classList.add('on');
   document.getElementById('rail-user').textContent=nm.charAt(0).toUpperCase();
