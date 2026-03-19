@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oshiete</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F8F6F2;
+  --white:#FFFFFF;
+  --peach:#FF8B6A; --peach-lt:#FFF1EC; --peach-md:#FFD4C4;
+  --mint:#5EC4B6;  --mint-lt:#EDFAF8;  --mint-md:#B8EDE8;
+  --sky:#6EB4F7;   --sky-lt:#EAF4FF;
+  --lemon:#F9D76B; --lemon-lt:#FEF8E0;
+  --lav:#B8A9F0;   --lav-lt:#F3F0FE;
+  --rose:#F07080;  --rose-lt:#FEF0F2;
+  --text:#26221E;  --text2:#8A837A;  --text3:#C0BAB3;
+  --border:#EDE8E2;
+  --r:9999px; --r-xl:28px; --r-lg:20px; --r-md:14px;
+  --sh-xs:0 1px 4px rgba(80,60,40,.06);
+  --sh-sm:0 2px 14px rgba(80,60,40,.08);
+  --sh-md:0 6px 32px rgba(80,60,40,.11);
+  --sh-lg:0 16px 56px rgba(80,60,40,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Nunito','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);display:flex;}
+
+/* ─────────────────────────────
+   AMBIENT BLOBS
+───────────────────────────── */
+.blob{position:fixed;border-radius:50%;filter:blur(72px);pointer-events:none;z-index:0;}
+.blob-a{width:500px;height:500px;background:radial-gradient(circle,var(--peach-md),transparent 70%);top:-160px;right:-120px;opacity:.28;}
+.blob-b{width:360px;height:360px;background:radial-gradient(circle,var(--mint-md),transparent 70%);bottom:-100px;left:80px;opacity:.22;}
+
+/* ─────────────────────────────
+   LOGIN SCREEN  (ultra minimal)
+───────────────────────────── */
+#login{
+  position:fixed;inset:0;z-index:200;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);
+}
+.login-wrap{
+  width:360px;max-width:94vw;
+  display:flex;flex-direction:column;align-items:center;
+  animation:rise .7s cubic-bezier(.34,1.5,.64,1) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(28px) scale(.95)}to{opacity:1;transform:none}}
+
+/* orb */
+.orb{
+  width:88px;height:88px;border-radius:50%;
+  background:linear-gradient(145deg,var(--peach) 0%,#FFAB6A 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 36px rgba(255,139,106,.34);
+  margin-bottom:20px;position:relative;
+}
+.orb::after{
+  content:'';position:absolute;
+  width:108px;height:108px;border-radius:50%;
+  border:1.5px solid rgba(255,139,106,.2);
+  animation:orbRing 3s ease-in-out infinite;
+}
+@keyframes orbRing{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.07);opacity:.15}}
+.orb svg{width:38px;height:38px;fill:white;}
+
+.login-title{
+  font-size:22px;font-weight:900;color:var(--text);
+  letter-spacing:-.3px;margin-bottom:6px;
+}
+.login-title em{font-style:normal;color:var(--peach);}
+.login-tagline{font-size:12px;color:var(--text3);margin-bottom:36px;font-weight:500;}
+
+/* card */
+.login-card{
+  width:100%;background:var(--white);
+  border-radius:var(--r-xl);
+  box-shadow:var(--sh-lg);
+  overflow:hidden;
+}
+
+/* expandable rows */
+.exp-row{border-bottom:1px solid var(--border);}
+.exp-row:last-child{border-bottom:none;}
+.exp-trigger{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:16px 22px;background:none;border:none;cursor:pointer;
+  font-family:inherit;text-align:left;transition:background .15s;
+}
+.exp-trigger:hover{background:var(--bg);}
+.exp-label{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;}
+.exp-value{font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.exp-value.set{color:var(--peach);}
+.exp-arrow{width:16px;height:16px;fill:var(--text3);transition:transform .25s;flex-shrink:0;margin-left:8px;}
+.exp-row.open .exp-arrow{transform:rotate(180deg);}
+.exp-body{display:none;padding:0 16px 16px;}
+.exp-row.open .exp-body{display:block;}
+
+/* lang pills inside exp */
+.pill-group{display:flex;gap:6px;flex-wrap:wrap;}
+.pill{
+  padding:7px 16px;border-radius:var(--r);
+  border:1.5px solid var(--border);background:var(--bg);
+  color:var(--text2);font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.pill:hover{border-color:var(--peach);color:var(--peach);}
+.pill.on{background:var(--peach);border-color:var(--peach);color:white;}
+
+/* role cards inside exp */
+.role-group{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.role-card{
+  border:1.5px solid var(--border);border-radius:var(--r-lg);
+  padding:14px 6px;text-align:center;cursor:pointer;
+  background:var(--bg);transition:all .18s;
+}
+.role-card:hover{border-color:var(--peach);background:var(--peach-lt);}
+.role-card.on{border-color:var(--peach);background:var(--peach-lt);}
+.role-card svg{width:24px;height:24px;display:block;margin:0 auto 8px;}
+.role-card .rn{font-size:11px;font-weight:700;color:var(--text2);}
+.role-card.on .rn{color:var(--peach);}
+
+/* staff list inside exp */
+.staff-list-exp{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;}
+.staff-list-exp::-webkit-scrollbar{width:3px;}
+.staff-list-exp::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.staff-opt{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:var(--r);
+  border:1.5px solid var(--border);background:var(--bg);
+  cursor:pointer;transition:all .15s;
+}
+.staff-opt:hover{border-color:var(--mint);background:var(--mint-lt);}
+.staff-opt.on{border-color:var(--mint);background:var(--mint-lt);}
+.staff-av{
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:white;flex-shrink:0;
+}
+.staff-opt-name{font-size:13px;font-weight:600;color:var(--text2);}
+.staff-opt.on .staff-opt-name{color:var(--mint);}
+.staff-opt-role{font-size:10px;color:var(--text3);margin-left:auto;}
+
+/* name + company row (always visible) */
+.login-fields{padding:18px 20px 4px;}
+.field-in{
+  width:100%;background:var(--bg);
+  border:1.5px solid var(--border);border-radius:var(--r);
+  color:var(--text);font-size:14px;font-weight:500;
+  padding:12px 18px;font-family:inherit;outline:none;
+  margin-bottom:10px;transition:all .2s;
+}
+.field-in:focus{border-color:var(--peach);box-shadow:0 0 0 3px rgba(255,139,106,.1);}
+.field-in::placeholder{color:var(--text3);}
+
+/* start button */
+.login-action{padding:16px 20px 20px;}
+.start-btn{
+  width:100%;padding:14px;border:none;border-radius:var(--r);
+  background:linear-gradient(135deg,var(--peach) 0%,#FF6B4A 100%);
+  color:white;font-size:15px;font-weight:800;cursor:pointer;
+  font-family:inherit;letter-spacing:.02em;
+  box-shadow:0 6px 22px rgba(255,107,74,.28);transition:all .2s;
+}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,107,74,.36);}
+
+/* ─────────────────────────────
+   MAIN APP
+───────────────────────────── */
+#app{display:none;flex:1;overflow:hidden;position:relative;z-index:1;}
+#app.on{display:flex;height:100vh;}
+
+/* ── SIDEBAR (icon rail) ── */
+.rail{
+  width:64px;background:var(--white);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;
+  padding:16px 0 12px;flex-shrink:0;
+  box-shadow:var(--sh-xs);position:relative;z-index:10;
+}
+.rail-logo{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--peach),#FF6B4A);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:22px;
+  box-shadow:0 3px 10px rgba(255,107,74,.25);
+}
+.rail-logo svg{width:18px;height:18px;fill:white;}
+.rail-nav{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.rib{
+  width:46px;height:46px;border-radius:50%;border:none;
+  background:transparent;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  cursor:pointer;transition:all .18s;position:relative;
+}
+.rib svg{width:19px;height:19px;fill:var(--text3);transition:fill .18s;}
+.rib:hover{background:var(--bg);}
+.rib:hover svg{fill:var(--text2);}
+.rib.on{background:var(--peach-lt);}
+.rib.on svg{fill:var(--peach);}
+.rib.care.on{background:var(--rose-lt);}
+.rib.care.on svg{fill:var(--rose);}
+.rib .badge{
+  position:absolute;top:7px;right:7px;
+  width:7px;height:7px;background:var(--rose);
+  border-radius:50%;border:1.5px solid white;
+}
+/* tooltip */
+.rib::before{
+  content:attr(data-tip);
+  position:absolute;left:56px;top:50%;transform:translateY(-50%);
+  background:var(--text);color:white;
+  font-size:11px;font-weight:600;padding:4px 10px;
+  border-radius:var(--r);white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s;
+  font-family:'Nunito',sans-serif;
+}
+.rib:hover::before{opacity:1;}
+.rail-user{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--mint),var(--sky));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:white;
+  box-shadow:0 2px 8px rgba(94,196,182,.22);
+  cursor:pointer;margin-top:auto;
+}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
+.panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.panel.on{display:flex;}
+
+/* TOP BAR */
+.tbar{
+  padding:14px 22px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--white);border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.tbar-title{font-size:15px;font-weight:800;color:var(--text);}
+.tbar-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.tbar-right{display:flex;gap:6px;align-items:center;}
+
+/* ── CHIP / PILL (reusable) ── */
+.chip{
+  padding:5px 13px;border-radius:var(--r);
+  background:var(--bg);border:1.5px solid var(--border);
+  font-size:11px;font-weight:700;color:var(--text2);
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.chip:hover{border-color:var(--peach);color:var(--peach);}
+.chip.on{background:var(--peach-lt);border-color:var(--peach);color:var(--peach);}
+.chip.mint.on{background:var(--mint-lt);border-color:var(--mint);color:var(--mint);}
+.chip.mint:hover{border-color:var(--mint);color:var(--mint);}
+
+/* ─────────────────────────────
+   CHAT PANEL
+───────────────────────────── */
+.cmsg-wrap{flex:1;overflow-y:auto;padding:20px 22px 8px;display:flex;flex-direction:column;gap:16px;}
+.cmsg-wrap::-webkit-scrollbar{width:3px;}
+.cmsg-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.msg{display:flex;gap:10px;align-items:flex-end;max-width:640px;}
+.msg.u{align-self:flex-end;flex-direction:row-reverse;}
+.mav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:var(--sh-sm);}
+.msg.ai .mav{background:linear-gradient(135deg,var(--mint),var(--sky));}
+.msg.ai .mav svg{width:16px;height:16px;fill:white;}
+.msg.u .mav{background:linear-gradient(135deg,var(--peach),#FF6B4A);font-size:13px;font-weight:800;color:white;}
+.mc{display:flex;flex-direction:column;gap:3px;}
+.mn{font-size:10px;font-weight:600;color:var(--text3);padding:0 10px;}
+.msg.u .mn{text-align:right;}
+.bub{padding:12px 16px;border-radius:18px;font-size:13px;line-height:1.8;word-break:break-word;}
+.msg.ai .bub{background:var(--white);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:var(--sh-sm);}
+.msg.u .bub{background:linear-gradient(135deg,var(--peach),#FF6B4A);color:white;border-bottom-right-radius:4px;}
+.bub p{margin-bottom:6px;}.bub p:last-child{margin-bottom:0;}
+.bub strong{font-weight:700;}.bub ul{padding-left:14px;margin:4px 0;}.bub li{margin-bottom:3px;}
+.ai-sugg{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+.sugg-btn{padding:5px 11px;border-radius:var(--r);background:var(--peach-lt);border:1.5px solid var(--peach-md);color:var(--peach);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+.sugg-btn:hover{background:var(--peach);color:white;}
+.tdots{display:flex;gap:4px;align-items:center;padding:12px 16px;}
+.tdot{width:6px;height:6px;background:var(--text3);border-radius:50%;animation:td 1.4s ease infinite;}
+.tdot:nth-child(2){animation-delay:.14s}.tdot:nth-child(3){animation-delay:.28s}
+@keyframes td{0%,60%,100%{transform:scale(1);opacity:.5}30%{transform:scale(1.3);opacity:1}}
+/* quick strip */
+.qstrip{padding:8px 22px 12px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);flex-shrink:0;}
+.qbtn{padding:6px 14px;border-radius:var(--r);background:var(--white);border:1.5px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;}
+.qbtn:hover{border-color:var(--peach);color:var(--peach);}
+/* input foot */
+.foot{padding:12px 22px 16px;background:var(--white);border-top:1px solid var(--border);flex-shrink:0;}
+.input-row{display:flex;align-items:flex-end;gap:8px;}
+.ta{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:18px;color:var(--text);font-size:13px;padding:10px 16px;font-family:inherit;outline:none;resize:none;min-height:42px;max-height:110px;line-height:1.5;transition:all .2s;}
+.ta:focus{border-color:var(--peach);box-shadow:0 0 0 3px rgba(255,139,106,.09);}
+.ta::placeholder{color:var(--text3);}
+.ibtn{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .18s;}
+.ibtn svg{width:17px;height:17px;fill:var(--text3);transition:fill .18s;}
+.ibtn:hover{background:var(--peach-lt);border-color:var(--peach);}
+.ibtn:hover svg{fill:var(--peach);}
+.ibtn.rec{background:rgba(240,112,128,.08);border-color:var(--rose);animation:recP 1.5s infinite;}
+.ibtn.rec svg{fill:var(--rose);}
+@keyframes recP{0%,100%{box-shadow:0 0 0 0 rgba(240,112,128,.25)}50%{box-shadow:0 0 0 7px rgba(240,112,128,0)}}
+.sbtn2{width:42px;height:42px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--peach),#FF6B4A);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(255,107,74,.26);transition:all .18s;}
+.sbtn2 svg{width:17px;height:17px;fill:white;margin-left:2px;}
+.sbtn2:hover{transform:scale(1.08);}
+
+/* ─────────────────────────────
+   CARE PANEL
+───────────────────────────── */
+.care-hero{padding:20px 22px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;}
+.care-hero-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.care-hero-sub{font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:14px;}
+.care-types{display:flex;gap:7px;flex-wrap:wrap;}
+.ctype{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--bg);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
+.ctype svg{width:13px;height:13px;}
+.ctype.kh{border-color:var(--rose);color:var(--rose);background:var(--rose-lt);}
+.ctype.kh svg{fill:var(--rose);}
+.ctype.gt{border-color:var(--lav);color:var(--lav);background:var(--lav-lt);}
+.ctype.gt svg{fill:var(--lav);}
+.ctype.st{border-color:var(--sky);color:var(--sky);background:var(--sky-lt);}
+.ctype.st svg{fill:var(--sky);}
+.ctype.ot{border-color:var(--mint);color:var(--mint);background:var(--mint-lt);}
+.ctype.ot svg{fill:var(--mint);}
+.ctype.dim{opacity:.45;}
+.sev-row{display:flex;align-items:center;gap:7px;margin-bottom:9px;}
+.sev-lbl{font-size:10px;font-weight:700;color:var(--text3);}
+.sev-p{padding:4px 11px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;color:var(--text2);}
+.sev-p.on.lo{background:var(--mint-lt);border-color:var(--mint);color:var(--mint);}
+.sev-p.on.me{background:var(--lemon-lt);border-color:var(--lemon);color:#9A7A00;}
+.sev-p.on.hi{background:var(--rose-lt);border-color:var(--rose);color:var(--rose);}
+.care-sbtn{background:linear-gradient(135deg,var(--rose),#E05060);box-shadow:0 3px 12px rgba(240,112,128,.22);}
+
+/* ─────────────────────────────
+   ARCHIVE PANEL
+───────────────────────────── */
+.arch-wrap{flex:1;overflow-y:auto;padding:18px 22px;}
+.arch-wrap::-webkit-scrollbar{width:3px;}
+.arch-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+/* search + filter row */
+.arch-top{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.arch-search{flex:1;min-width:140px;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-size:13px;padding:9px 16px;font-family:inherit;outline:none;transition:all .18s;}
+.arch-search:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(94,196,182,.09);}
+.arch-search::placeholder{color:var(--text3);}
+.date-f{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-size:12px;padding:9px 14px;font-family:inherit;outline:none;transition:all .18s;cursor:pointer;}
+.date-f:focus{border-color:var(--mint);}
+/* stats */
+.a-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.asc{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:14px;text-align:center;}
+.asn{font-size:24px;font-weight:800;color:var(--text);}
+.asl{font-size:10px;color:var(--text3);margin-top:2px;}
+/* timeline */
+.a-item{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:8px;transition:box-shadow .18s;}
+.a-item:hover{box-shadow:var(--sh-sm);}
+.a-head{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;}
+.a-badge{font-size:9px;font-weight:800;padding:2px 8px;border-radius:var(--r);}
+.a-badge.kasuhara{background:var(--rose-lt);color:var(--rose);}
+.a-badge.gutti{background:var(--lav-lt);color:var(--lav);}
+.a-badge.stress{background:var(--sky-lt);color:var(--sky);}
+.a-badge.report{background:var(--mint-lt);color:var(--mint);}
+.a-badge.chat{background:var(--sky-lt);color:var(--sky);}
+.a-badge.other{background:var(--mint-lt);color:var(--mint);}
+.a-sev{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.a-sev.high{background:var(--rose);}
+.a-sev.med{background:var(--lemon);}
+.a-staff{font-size:11px;font-weight:700;color:var(--text2);}
+.a-date{font-size:10px;color:var(--text3);margin-left:auto;}
+.a-text{font-size:12px;color:var(--text2);line-height:1.7;}
+.a-ai{font-size:11px;color:var(--text3);background:var(--bg);padding:8px 12px;border-radius:var(--r-md);margin-top:7px;border-left:3px solid var(--mint);line-height:1.5;}
+/* staff grid */
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+.sc{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px;cursor:pointer;transition:all .18s;}
+.sc:hover{box-shadow:var(--sh-sm);border-color:var(--peach);}
+.sc-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white;margin-bottom:10px;}
+.sc-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.sc-role{font-size:10px;color:var(--text3);}
+.sc-chips{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap;}
+.sc-chip{font-size:10px;padding:2px 8px;border-radius:var(--r);background:var(--bg);}
+/* AI query */
+.ai-q-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:20px;margin-bottom:14px;}
+.ai-q-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.ai-q-sub{font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:14px;}
+.ai-q-result{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px;}
+
+/* ─────────────────────────────
+   REPORT PANEL
+───────────────────────────── */
+.rep-scroll{flex:1;overflow-y:auto;padding:18px 22px;}
+.rep-scroll::-webkit-scrollbar{width:3px;}
+.rep-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.rs{margin-bottom:22px;}
+.rs-title{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:9px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.08em;}
+.rs-title svg{width:13px;height:13px;fill:var(--peach);}
+.cl{display:flex;flex-direction:column;gap:6px;}
+.cr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .18s;}
+.cr:hover{border-color:var(--mint);}
+.cr.done{background:var(--mint-lt);border-color:var(--mint);}
+.cc{width:19px;height:19px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s;}
+.cc svg{width:9px;height:9px;fill:white;opacity:0;}
+.cr.done .cc{background:var(--mint);border-color:var(--mint);}
+.cr.done .cc svg{opacity:1;}
+.ct{font-size:12px;color:var(--text2);font-weight:600;}
+.cr.done .ct{color:var(--text);}
+.vbar{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+.vchip{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--white);font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .18s;}
+.vchip svg{width:12px;height:12px;fill:var(--text3);}
+.vchip:hover{border-color:var(--mint);color:var(--mint);}
+.vchip.rec{border-color:var(--rose);color:var(--rose);animation:recP 1.5s infinite;}
+.vchip.rec svg{fill:var(--rose);}
+.rta{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-lg);color:var(--text);font-size:13px;padding:12px 15px;font-family:inherit;outline:none;resize:vertical;min-height:76px;line-height:1.7;transition:all .18s;}
+.rta:focus{border-color:var(--peach);box-shadow:0 0 0 3px rgba(255,139,106,.09);}
+.rta::placeholder{color:var(--text3);}
+.rep-foot{padding:12px 22px 16px;background:var(--white);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;}
+.bg{padding:10px 18px;border-radius:var(--r);border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;}
+.bg:hover{border-color:var(--text2);color:var(--text);}
+.bpr{padding:10px 22px;border-radius:var(--r);border:none;background:linear-gradient(135deg,var(--peach),#FF6B4A);color:white;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,107,74,.22);transition:all .18s;}
+.bpr:hover{transform:translateY(-1px);}
+
+/* ─────────────────────────────
+   KNOWLEDGE PANEL
+───────────────────────────── */
+.kb-wrap{flex:1;overflow-y:auto;padding:18px 22px;}
+.kb-wrap::-webkit-scrollbar{width:3px;}
+.kb-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.kb-search{position:relative;margin-bottom:14px;}
+.kb-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:14px;height:14px;fill:var(--text3);pointer-events:none;}
+.kb-in{width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-size:13px;padding:10px 14px 10px 40px;font-family:inherit;outline:none;transition:all .18s;}
+.kb-in:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(94,196,182,.09);}
+.kb-in::placeholder{color:var(--text3);}
+.faq-stack{display:flex;flex-direction:column;gap:8px;}
+.fc{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:box-shadow .18s;}
+.fc:hover{box-shadow:var(--sh-sm);}
+.fh{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;}
+.fdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.fq{flex:1;font-size:13px;font-weight:700;color:var(--text);}
+.ftag{font-size:9px;font-weight:800;padding:2px 8px;border-radius:var(--r);flex-shrink:0;}
+.farr{flex-shrink:0;transition:transform .22s;}
+.farr svg{width:12px;height:12px;fill:var(--text3);}
+.fc.open .farr{transform:rotate(180deg);}
+.fa{display:none;padding:0 16px 14px;font-size:12px;color:var(--text2);line-height:1.8;border-top:1px solid var(--border);padding-top:13px;}
+.fc.open .fa{display:block;}
+
+/* ─────────────────────────────
+   DASHBOARD PANEL
+───────────────────────────── */
+.dash-wrap{flex:1;overflow-y:auto;padding:18px 22px;}
+.dash-wrap::-webkit-scrollbar{width:3px;}
+.dash-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.st-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.stile{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px;transition:box-shadow .18s;}
+.stile:hover{box-shadow:var(--sh-sm);}
+.si{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
+.si svg{width:15px;height:15px;fill:white;}
+.sn{font-size:26px;font-weight:800;color:var(--text);line-height:1;}
+.sn span{font-size:12px;color:var(--text3);font-weight:400;}
+.sl{font-size:10px;color:var(--text3);margin-top:2px;}
+.sc2{font-size:10px;font-weight:700;margin-top:4px;}
+.up{color:var(--mint);}.dn{color:var(--rose);}
+.d2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.dtile{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px;}
+.dtt{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:13px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.07em;}
+.dtt svg{width:12px;height:12px;fill:var(--peach);}
+.brows{display:flex;flex-direction:column;gap:11px;}
+.brow{display:flex;align-items:center;gap:9px;}
+.bn{font-size:11px;color:var(--text2);font-weight:600;width:50px;flex-shrink:0;}
+.bt{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;}
+.bf{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.34,1.56,.64,1);}
+.bp{font-size:10px;color:var(--text3);width:28px;text-align:right;}
+.act-list{display:flex;flex-direction:column;gap:9px;}
+.ar{display:flex;gap:9px;align-items:flex-start;}
+.ad{width:6px;height:6px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.at{font-size:12px;color:var(--text2);line-height:1.5;}
+.ati{font-size:10px;color:var(--text3);margin-top:1px;}
+/* insight */
+.ins-btn{display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:var(--r);background:var(--lav-lt);border:1.5px solid var(--lav);color:var(--lav);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;margin-bottom:13px;}
+.ins-btn svg{width:14px;height:14px;fill:var(--lav);}
+.ins-btn:hover{background:var(--lav);color:white;}
+.ins-btn:hover svg{fill:white;}
+.ins-cards{display:flex;flex-direction:column;gap:9px;}
+.ic{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px;}
+.ic-head{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.ic-ico{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ic-ico svg{width:14px;height:14px;fill:white;}
+.ic-ttl{font-size:13px;font-weight:700;color:var(--text);}
+.ic-body{font-size:12px;color:var(--text2);line-height:1.8;}
+.ic-act{display:inline-flex;align-items:center;gap:5px;margin-top:9px;padding:6px 13px;border-radius:var(--r);background:var(--bg);border:1.5px solid var(--border);font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s;}
+.ic-act:hover{border-color:var(--mint);color:var(--mint);}
+.rlist{display:flex;flex-direction:column;gap:6px;}
+.rrow{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg);border-radius:var(--r-md);font-size:12px;}
+.rst3{font-size:9px;font-weight:800;padding:2px 8px;border-radius:var(--r);white-space:nowrap;flex-shrink:0;}
+.rtxt{color:var(--text2);flex:1;}
+.rtim{font-size:10px;color:var(--text3);flex-shrink:0;}
+
+/* ─────────────────────────────
+   SPINNER / TOAST / MISC
+───────────────────────────── */
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--mint);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toast-root{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:6px;z-index:9999;}
+.toast{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:10px 16px;font-size:12px;font-weight:600;color:var(--text);box-shadow:var(--sh-md);animation:toastIn .28s cubic-bezier(.34,1.5,.64,1);}
+.toast.ok{border-left:3px solid var(--mint);}
+.toast.err{border-left:3px solid var(--rose);}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+/* empty */
+.empty{text-align:center;padding:48px 16px;color:var(--text3);}
+.empty svg{width:40px;height:40px;fill:var(--border);display:block;margin:0 auto 10px;}
+.empty p{font-size:13px;}
+/* msg anim */
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg{animation:msgIn .25s ease both;}
+@media(max-width:680px){.st-grid{grid-template-columns:1fr 1fr;}.d2{grid-template-columns:1fr;}.a-stats{grid-template-columns:1fr 1fr;}.rail{width:52px;}.rib{width:40px;height:40px;}.rib svg{width:17px;height:17px;}}
+</style>
+</head>
+<body>
+
+<div class="blob blob-a"></div>
+<div class="blob blob-b"></div>
+
+<!-- ══════════ LOGIN (ultra minimal) ══════════ -->
+<div id="login">
+  <div class="login-wrap">
+    <div class="orb">
+      <svg viewBox="0 0 48 48"><path d="M24 4C13 4 6 12 6 21c0 5 2.5 9.5 6.5 12.5V40a2 2 0 002 2h19a2 2 0 002-2v-6.5C39.5 30.5 42 26 42 21c0-9-7-17-18-17z"/></svg>
+    </div>
+    <div class="login-title">Oshiete <em>上司</em></div>
+    <div class="login-tagline">ナレッジ・ケア・日報 BOT</div>
+
+    <div class="login-card">
+      <!-- name + company always visible -->
+      <div class="login-fields">
+        <input class="field-in" id="f-company" type="text" placeholder="会社・店舗名（例：山田屋 本店）"/>
+        <input class="field-in" id="f-name" type="text" placeholder="お名前"/>
+      </div>
+
+      <!-- ROLE (expandable) -->
+      <div class="exp-row" id="er-role">
+        <button class="exp-trigger" onclick="toggleExp('er-role')">
+          <span class="exp-label">ロール</span>
+          <span style="display:flex;align-items:center;gap:4px">
+            <span class="exp-value set" id="ev-role">スタッフ</span>
+            <svg class="exp-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="exp-body">
+          <div class="role-group">
+            <div class="role-card on" onclick="pickRole('staff',this)">
+              <svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="5"/><path d="M6 28c0-6 4.5-10 10-10s10 4 10 10"/></svg>
+              <div class="rn" id="rl-staff">スタッフ</div>
+            </div>
+            <div class="role-card" onclick="pickRole('manager',this)">
+              <svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"/><path d="M8 28c0-5 3.5-9 8-9s8 4 8 9"/><rect x="10" y="17" width="12" height="2" rx="1"/></svg>
+              <div class="rn" id="rl-manager">店長・上司</div>
+            </div>
+            <div class="role-card" onclick="pickRole('owner',this)">
+              <svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"/><path d="M8 28c0-5 3.5-9 8-9s8 4 8 9"/><path d="M16 2l1.5 3.2 3.5.5-2.5 2.5.5 3.5L16 10l-3 1.5.5-3.5-2.5-2.4 3.5-.5z"/></svg>
+              <div class="rn" id="rl-owner">オーナー</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LANGUAGE (expandable) -->
+      <div class="exp-row" id="er-lang">
+        <button class="exp-trigger" onclick="toggleExp('er-lang')">
+          <span class="exp-label">言語 / Language</span>
+          <span style="display:flex;align-items:center;gap:4px">
+            <span class="exp-value set" id="ev-lang">🇯🇵 日本語</span>
+            <svg class="exp-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="exp-body">
+          <div class="pill-group">
+            <button class="pill on" onclick="setLang('ja','🇯🇵 日本語',this)">🇯🇵 日本語</button>
+            <button class="pill" onclick="setLang('en','🇺🇸 English',this)">🇺🇸 English</button>
+            <button class="pill" onclick="setLang('zh','🇨🇳 中文',this)">🇨🇳 中文</button>
+            <button class="pill" onclick="setLang('vi','🇻🇳 Tiếng Việt',this)">🇻🇳 Tiếng Việt</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXISTING STAFF (expandable, optional) -->
+      <div class="exp-row" id="er-staff">
+        <button class="exp-trigger" onclick="toggleExp('er-staff')">
+          <span class="exp-label">登録済みスタッフから選ぶ</span>
+          <span style="display:flex;align-items:center;gap:4px">
+            <span class="exp-value" id="ev-staff">（任意）</span>
+            <svg class="exp-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="exp-body">
+          <div class="staff-list-exp" id="staff-list-exp">
+            <div style="font-size:12px;color:var(--text3);padding:8px">登録されたスタッフがいません。名前を入力してスタートしてください。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-action">
+        <button class="start-btn" onclick="launch()">はじめる</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="app">
+  <!-- Rail -->
+  <div class="rail">
+    <div class="rail-logo"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 3 6 3 10.5c0 2.5 1.2 4.7 3.2 6.2V20a1 1 0 001 1h9.6a1 1 0 001-1v-3.3c2-1.5 3.2-3.7 3.2-6.2C21 6 17.5 2 12 2z"/></svg></div>
+    <nav class="rail-nav">
+      <button class="rib on" data-tip="AIチャット" onclick="gp('chat',this)"><svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg></button>
+      <button class="rib care" data-tip="こころケア" onclick="gp('care',this)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></button>
+      <button class="rib" data-tip="アーカイブ" onclick="gp('archive',this)"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M2 10v10a1 1 0 001 1h18a1 1 0 001-1V10"/><path d="M10 15h4"/></svg></button>
+      <button class="rib" data-tip="日報" onclick="gp('report',this)"><span class="badge"></span><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M8 13h8M8 17h5M14 2v6h6"/></svg></button>
+      <button class="rib" data-tip="ナレッジ" onclick="gp('knowledge',this)"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></button>
+      <button class="rib" id="dash-rib" data-tip="ダッシュボード" onclick="gp('dashboard',this)"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="8" height="9" rx="1"/><rect x="14" y="3" width="8" height="5" rx="1"/><rect x="14" y="12" width="8" height="9" rx="1"/><rect x="2" y="16" width="8" height="5" rx="1"/></svg></button>
+    </nav>
+    <div class="rail-user" id="rail-user">U</div>
+  </div>
+
+  <div class="main">
+
+    <!-- ── CHAT ── -->
+    <div class="panel on" id="panel-chat">
+      <div class="tbar">
+        <div><div class="tbar-title" id="tt-chat">AIに話しかける</div><div class="tbar-sub">なんでも気軽にどうぞ</div></div>
+        <div class="tbar-right" id="app-lang-sw">
+          <button class="chip on" onclick="swLang('ja','🇯🇵',this)">JA</button>
+          <button class="chip" onclick="swLang('en','🇺🇸',this)">EN</button>
+          <button class="chip" onclick="swLang('zh','🇨🇳',this)">中</button>
+          <button class="chip" onclick="swLang('vi','🇻🇳',this)">VN</button>
+        </div>
+      </div>
+      <div class="cmsg-wrap" id="chat-msgs"></div>
+      <div class="qstrip" id="qstrip"></div>
+      <div class="foot">
+        <div class="input-row">
+          <button class="ibtn" id="vc-chat" onclick="toggleVC('chat')" title="音声入力"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 19v4M8 23h8"/></svg></button>
+          <textarea class="ta" id="chat-in" rows="1" oninput="ah(this)" onkeydown="ck(event)" placeholder="メッセージを入力…"></textarea>
+          <button class="sbtn2" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CARE ── -->
+    <div class="panel" id="panel-care">
+      <div class="tbar">
+        <div><div class="tbar-title" style="color:var(--rose)">こころケア</div><div class="tbar-sub">カスハラ・愚痴・ストレスをここで吐き出してください</div></div>
+      </div>
+      <div class="care-hero" id="care-hero">
+        <div class="care-hero-title">今日はどんなことがありましたか？</div>
+        <div class="care-hero-sub">ここはあなたの安全な場所です。何でも話してください。</div>
+        <div class="care-types" id="care-types">
+          <button class="ctype kh" onclick="startCare('kasuhara',this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>カスタマーハラスメント</button>
+          <button class="ctype gt" onclick="startCare('gutti',this)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>愚痴・不満</button>
+          <button class="ctype st" onclick="startCare('stress',this)"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>ストレス・疲れ</button>
+          <button class="ctype ot" onclick="startCare('other',this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>その他の相談</button>
+        </div>
+      </div>
+      <div class="cmsg-wrap" id="care-msgs" style="display:none"></div>
+      <div class="foot" id="care-foot" style="display:none">
+        <div class="sev-row">
+          <span class="sev-lbl">深刻度：</span>
+          <button class="sev-p lo on" onclick="setSev('low',this)">軽い</button>
+          <button class="sev-p me" onclick="setSev('med',this)">中程度</button>
+          <button class="sev-p hi" onclick="setSev('high',this)">深刻</button>
+        </div>
+        <div class="input-row">
+          <button class="ibtn" id="vc-care" onclick="toggleVC('care')"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 19v4"/></svg></button>
+          <textarea class="ta" id="care-in" rows="1" oninput="ah(this)" onkeydown="cck(event)" placeholder="今日あったことを話してください…"></textarea>
+          <button class="sbtn2 care-sbtn" onclick="sendCare()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ARCHIVE ── -->
+    <div class="panel" id="panel-archive">
+      <div class="tbar">
+        <div><div class="tbar-title">アーカイブ</div><div class="tbar-sub">蓄積された記録</div></div>
+        <div class="tbar-right">
+          <button class="chip mint on" id="at-all" onclick="archTab('all',this)">全記録</button>
+          <button class="chip mint" id="at-staff" onclick="archTab('staff',this)">スタッフ</button>
+          <button class="chip mint" id="at-ai" onclick="archTab('ai',this)">AIに聞く</button>
+        </div>
+      </div>
+      <!-- ALL -->
+      <div class="arch-wrap" id="av-all">
+        <div class="arch-top">
+          <input class="arch-search" id="arch-kw" type="text" placeholder="キーワード…" oninput="renderArch()"/>
+          <input class="date-f" id="arch-dt" type="date" onchange="renderArch()" title="日付フィルター"/>
+          <button class="chip mint" onclick="document.getElementById('arch-dt').value='';renderArch()">クリア</button>
+        </div>
+        <div class="pill-group" style="margin-bottom:14px">
+          <button class="pill on" onclick="archF('all',this)">すべて</button>
+          <button class="pill" onclick="archF('kasuhara',this)">カスハラ</button>
+          <button class="pill" onclick="archF('gutti',this)">愚痴</button>
+          <button class="pill" onclick="archF('stress',this)">ストレス</button>
+          <button class="pill" onclick="archF('report',this)">日報</button>
+          <button class="pill" onclick="archF('chat',this)">チャット</button>
+        </div>
+        <div class="a-stats" id="a-stats"></div>
+        <div id="a-timeline"></div>
+      </div>
+      <!-- STAFF -->
+      <div class="arch-wrap" id="av-staff" style="display:none">
+        <div class="staff-grid" id="staff-grid"></div>
+        <div id="staff-det" style="display:none"></div>
+      </div>
+      <!-- AI QUERY -->
+      <div class="arch-wrap" id="av-ai" style="display:none">
+        <div class="ai-q-card">
+          <div class="ai-q-title">アーカイブをAIに質問する</div>
+          <div class="ai-q-sub">「3月15日に何がありましたか？」「先週のカスハラをまとめて」「田中さんの最近の状況は？」など自由に聞けます。</div>
+          <div class="input-row">
+            <textarea class="ta" id="arch-q" rows="2" placeholder="質問を入力してください…" style="border-radius:var(--r-lg)"></textarea>
+            <button class="sbtn2" onclick="archQuery()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+          </div>
+        </div>
+        <div id="arch-ai-res"></div>
+      </div>
+    </div>
+
+    <!-- ── REPORT ── -->
+    <div class="panel" id="panel-report">
+      <div class="tbar">
+        <div><div class="tbar-title">日報・チェック</div><div class="tbar-sub">音声で話すだけで記録されます</div></div>
+      </div>
+      <div class="rep-scroll">
+        <div class="rs">
+          <div class="rs-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>開店チェック</div>
+          <div class="cl" id="open-cl">
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">清掃・床拭き完了</span></div>
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">食材・在庫の確認</span></div>
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">レジ・POSシステム起動</span></div>
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">スタッフ全員揃っている</span></div>
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">本日の予約内容確認</span></div>
+          </div>
+        </div>
+        <div class="rs">
+          <div class="rs-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM8 13h8M8 17h5"/></svg>本日の報告</div>
+          <div class="vbar">
+            <button class="vchip" id="rv-btn" onclick="toggleRV()"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 19v4"/></svg><span id="rv-lbl">音声で入力</span></button>
+            <span style="font-size:11px;color:var(--text3)" id="rv-st"></span>
+          </div>
+          <textarea class="rta" id="r-body" placeholder="例：ランチ満員。レバーの在庫が少なくなっています。" rows="4"></textarea>
+        </div>
+        <div class="rs">
+          <div class="rs-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>問題・改善点</div>
+          <textarea class="rta" id="r-iss" placeholder="クレーム・設備不具合・人員不足など" rows="3"></textarea>
+        </div>
+        <div class="rs">
+          <div class="rs-title"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 01-4 4H3"/></svg>引継ぎ事項</div>
+          <textarea class="rta" id="r-hand" placeholder="次のシフトへの申し送り事項" rows="3"></textarea>
+        </div>
+        <div class="rs">
+          <div class="rs-title"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>閉店チェック</div>
+          <div class="cl" id="close-cl">
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">レジ締め・売上記録</span></div>
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">厨房清掃完了</span></div>
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">ゴミ出し完了</span></div>
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">冷蔵・冷凍庫確認</span></div>
+            <div class="cr" onclick="chk(this)"><div class="cc"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg></div><span class="ct">戸締まり・施錠確認</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="rep-foot">
+        <button class="bg" onclick="aiSum()">AIで要約</button>
+        <button class="bpr" onclick="submitRep()">保存・送信</button>
+      </div>
+    </div>
+
+    <!-- ── KNOWLEDGE ── -->
+    <div class="panel" id="panel-knowledge">
+      <div class="tbar">
+        <div><div class="tbar-title">ナレッジ</div><div class="tbar-sub">業務マニュアル・よくある質問</div></div>
+      </div>
+      <div class="kb-wrap">
+        <div class="kb-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="kb-in" id="kb-in" placeholder="キーワード検索…" oninput="renderFAQ()"/></div>
+        <div class="pill-group" style="margin-bottom:14px" id="cat-row">
+          <button class="pill on" onclick="kCat('all',this)">すべて</button>
+          <button class="pill" onclick="kCat('open',this)">開店・閉店</button>
+          <button class="pill" onclick="kCat('service',this)">接客</button>
+          <button class="pill" onclick="kCat('inventory',this)">在庫・仕入れ</button>
+          <button class="pill" onclick="kCat('emergency',this)">緊急対応</button>
+          <button class="pill" onclick="kCat('training',this)">研修</button>
+        </div>
+        <div class="faq-stack" id="faq-list"></div>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD ── -->
+    <div class="panel" id="panel-dashboard">
+      <div class="tbar">
+        <div><div class="tbar-title">ダッシュボード</div><div class="tbar-sub">全体状況 &amp; 経営提言</div></div>
+        <div class="tbar-right">
+          <button class="chip on" id="dt-ov" onclick="dTab('ov',this)">概要</button>
+          <button class="chip" id="dt-ins" onclick="dTab('ins',this)">経営提言</button>
+        </div>
+      </div>
+      <div class="dash-wrap" id="dv-ov">
+        <div class="st-grid">
+          <div class="stile"><div class="si" style="background:linear-gradient(135deg,var(--mint),#3BBCAE)"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M8 13h8M8 17h5"/></svg></div><div class="sn" id="ds-rep">0</div><div class="sl">本日の日報</div><div class="sc2 up" id="ds-rep-c">積み上げましょう</div></div>
+          <div class="stile"><div class="si" style="background:linear-gradient(135deg,var(--rose),#E05060)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div><div class="sn" id="ds-care" style="color:var(--rose)">0</div><div class="sl">ケア記録（累計）</div><div class="sc2 dn">サポートしています</div></div>
+          <div class="stile"><div class="si" style="background:linear-gradient(135deg,var(--sky),#4A9EE0)"><svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg></div><div class="sn" id="ds-chat">0</div><div class="sl">AI相談（累計）</div><div class="sc2 up">ナレッジ育成中</div></div>
+          <div class="stile"><div class="si" style="background:linear-gradient(135deg,var(--lav),#9B8AE8)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><div class="sn" id="ds-staff">0</div><div class="sl">スタッフ数</div><div class="sc2 up">記録あり</div></div>
+        </div>
+        <div class="d2">
+          <div class="dtile">
+            <div class="dtt"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>ケア種別</div>
+            <div class="brows">
+              <div class="brow"><div class="bn">カスハラ</div><div class="bt"><div class="bf" id="b-kh" style="width:0%;background:var(--rose)"></div></div><div class="bp" id="bv-kh">0</div></div>
+              <div class="brow"><div class="bn">愚痴</div><div class="bt"><div class="bf" id="b-gt" style="width:0%;background:var(--lav)"></div></div><div class="bp" id="bv-gt">0</div></div>
+              <div class="brow"><div class="bn">ストレス</div><div class="bt"><div class="bf" id="b-st" style="width:0%;background:var(--sky)"></div></div><div class="bp" id="bv-st">0</div></div>
+            </div>
+          </div>
+          <div class="dtile">
+            <div class="dtt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>最新アクティビティ</div>
+            <div class="act-list" id="act-list"><div class="ar"><div class="ad" style="background:var(--border)"></div><div><div class="at">まだ記録がありません</div></div></div></div>
+          </div>
+        </div>
+        <div class="dtile">
+          <div class="dtt"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>最新の日報サマリー</div>
+          <div class="rlist" id="rep-list"><div style="font-size:12px;color:var(--text3);padding:6px">まだ日報がありません</div></div>
+        </div>
+      </div>
+      <div class="dash-wrap" id="dv-ins" style="display:none">
+        <button class="ins-btn" onclick="genInsight()">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 4v8M12 17h.01"/></svg>
+          蓄積データからAI経営提言を生成する
+        </button>
+        <div class="ins-cards" id="ins-cards">
+          <div style="font-size:12px;color:var(--text3);padding:20px;text-align:center;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg)">記録が蓄積されると、AIが課題と改善提案を自動生成します。</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-root"></div>
+
+<script>
+/* ══════════ STATE & DB ══════════ */
+const S={lang:'ja',role:'staff',name:'',company:'',history:[],careHistory:[],careType:'gutti',sev:'low',rec:{chat:false,care:false,rep:false},SR:null,kCat:'all',archType:'all'};
+const DB={
+  get(){try{return JSON.parse(localStorage.getItem('oshi_db')||'{}')}catch{return{}}},
+  save(d){localStorage.setItem('oshi_db',JSON.stringify(d))},
+  logs(){const d=this.get();return d.logs||[]},
+  staff(){const d=this.get();return d.staff||{}},
+  addLog(l){const d=this.get();if(!d.logs)d.logs=[];d.logs.unshift(l);if(d.logs.length>500)d.logs=d.logs.slice(0,500);this.save(d);updateDash();renderArch();},
+  addStaff(id,info){const d=this.get();if(!d.staff)d.staff={};d.staff[id]=info;this.save(d);}
+};
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function today(){return new Date().toISOString().slice(0,10);}
+function nowt(){return new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});}
+
+/* ══════════ LOGIN EXPANDABLE ══════════ */
+function toggleExp(id){
+  const row=document.getElementById(id);
+  row.classList.toggle('open');
+}
+function setLang(l,label,btn){
+  S.lang=l;
+  document.querySelectorAll('#er-lang .pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('ev-lang').textContent=label;
+}
+function pickRole(r,el){
+  S.role=r;
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  const labels={staff:'スタッフ',manager:'店長・上司',owner:'オーナー'};
+  document.getElementById('ev-role').textContent=labels[r];
+}
+
+/* ══════════ STAFF LIST on LOGIN ══════════ */
+function loadLoginStaff(){
+  const sm=DB.staff();
+  const list=document.getElementById('staff-list-exp');
+  const entries=Object.entries(sm);
+  const avColors=['linear-gradient(135deg,var(--peach),#FF6B4A)','linear-gradient(135deg,var(--mint),var(--sky))','linear-gradient(135deg,var(--lav),#9B8AE8)','linear-gradient(135deg,var(--lemon),#E8C040)'];
+  if(entries.length===0){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px">まだ登録されていません</div>';return;}
+  list.innerHTML=entries.map(([id,info],i)=>`
+    <div class="staff-opt" onclick="selectStaff('${id}',this)">
+      <div class="staff-av" style="background:${avColors[i%avColors.length]}">${(info.name||'U').charAt(0)}</div>
+      <div class="staff-opt-name">${info.name}</div>
+      <div class="staff-opt-role">${{staff:'スタッフ',manager:'店長',owner:'オーナー'}[info.role]||info.role}</div>
+    </div>
+  `).join('');
+}
+function selectStaff(id,el){
+  const sm=DB.staff();
+  const info=sm[id];if(!info)return;
+  document.querySelectorAll('.staff-opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('f-name').value=info.name;
+  document.getElementById('f-company').value=info.company||'';
+  // auto-select role
+  S.role=info.role||'staff';
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('on'));
+  const roleMap={staff:0,manager:1,owner:2};
+  const cards=document.querySelectorAll('.role-card');
+  if(cards[roleMap[S.role]])cards[roleMap[S.role]].classList.add('on');
+  const labels={staff:'スタッフ',manager:'店長・上司',owner:'オーナー'};
+  document.getElementById('ev-role').textContent=labels[S.role]||S.role;
+  document.getElementById('ev-staff').textContent=info.name;
+}
+
+/* ══════════ LAUNCH ══════════ */
+function launch(){
+  const co=document.getElementById('f-company').value.trim()||'あなたの会社';
+  const nm=document.getElementById('f-name').value.trim()||'スタッフ';
+  S.company=co;S.name=nm;
+  const sid=nm+'_'+S.role;
+  DB.addStaff(sid,{name:nm,role:S.role,company:co,since:today()});
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').classList.add('on');
+  document.getElementById('rail-user').textContent=nm.charAt(0).toUpperCase();
+  if(S.role==='staff')document.getElementById('dash-rib').style.display='none';
+  initChat();buildQP();renderFAQ();updateDash();renderArch();
+}
+
+/* ══════════ NAV ══════════ */
+function gp(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.rib').forEach(b=>b.classList.remove('on'));
+  document.getElementById('panel-'+name).classList.add('on');
+  btn.classList.add('on');
+  if(name==='archive')renderArch();
+  if(name==='dashboard')updateDash();
+}
+
+/* ══════════ i18n SYSTEMS ══════════ */
+function sys_chat(){
+  const rn={staff:'スタッフ',manager:'店長・上司',owner:'オーナー'}[S.role]||S.role;
+  return `あなたは「AI上司」です。${S.company}で働く${S.name}（${rn}）をサポートする知識豊富でやさしいAIです。
+【話し方】温かくカジュアル。共感してから答える。回答後は必ず関連する提案か次のステップを一つ添える。
+${S.role==='owner'?'経営・改善視点でも積極的に提言する。':'現場目線でわかりやすく。'}
+言語：${S.lang==='ja'?'日本語':S.lang==='en'?'English':S.lang==='zh'?'中文':'Tiếng Việt'}で回答。`;
+}
+function sys_care(){
+  const tm={kasuhara:'カスタマーハラスメント',gutti:'愚痴・不満',stress:'ストレス・疲れ',other:'相談'};
+  const sm={low:'軽め',med:'中程度',high:'深刻'};
+  return `あなたは「ケアAI上司」です。${S.company}の${S.name}が${tm[S.careType]}について話しています（深刻度：${sm[S.sev]}）。
+【必須の応答順序】①深く共感・受け止める（「それは本当につらかったですね」等）②状況を優しく引き出す③実用的なサポート提案。
+絶対にやってはいけない：すぐ解決策だけ言う・軽く流す・否定する。
+${S.sev==='high'?'深刻なケースなので「この件は管理職に報告します」と必ず伝えること。':''}
+言語：日本語で回答。`;
+}
+
+/* ══════════ CHAT ══════════ */
+const QP_JA=['開店準備の手順は？','クレームが来たら？','在庫が少ないとき','新人への一言','緊急連絡先'];
+const QP_EN=['Opening procedures?','Handling complaints?','Low inventory','Tips for new staff','Emergency contacts'];
+const QP_ZH=['开店准备流程','处理投诉','库存不足','新员工培训','紧急联系'];
+const QP_VI=['Quy trình mở cửa?','Xử lý khiếu nại?','Hàng tồn thấp','Hướng dẫn nhân viên','Liên hệ khẩn cấp'];
+function getQP(){return S.lang==='en'?QP_EN:S.lang==='zh'?QP_ZH:S.lang==='vi'?QP_VI:QP_JA;}
+const WM_JA=`こんにちは！😊 なんでも気軽に話しかけてくださいね。\n業務のこと、わからないこと、ちょっとした確認まで — 一緒に考えます。\n今日はどんなことが気になっていますか？`;
+const WM_EN=`Hello! 😊 Feel free to ask me anything!\nWork questions, things you're unsure about — I'm here to help.\nWhat's on your mind today?`;
+const WM_ZH=`你好！😊 有什么都可以问我！\n工作、不清楚的事情 — 一起想想看吧。\n今天有什么想聊的？`;
+const WM_VI=`Xin chào! 😊 Cứ thoải mái hỏi tôi nhé!\nViệc làm, điều chưa rõ — chúng ta cùng tìm hiểu.\nHôm nay bạn muốn hỏi gì?`;
+function getWM(){return S.lang==='en'?WM_EN:S.lang==='zh'?WM_ZH:S.lang==='vi'?WM_VI:WM_JA;}
+
+function initChat(){
+  addMsg('chat-msgs','ai',getWM(),getQP());
+}
+function buildQP(){
+  document.getElementById('qstrip').innerHTML=getQP().map(q=>`<button class="qbtn" onclick="useQP(this)">${q}</button>`).join('');
+}
+function useQP(btn){document.getElementById('chat-in').value=btn.textContent;sendChat();}
+function swLang(l,flag,btn){
+  S.lang=l;
+  document.querySelectorAll('#app-lang-sw .chip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  buildQP();
+}
+
+async function sendChat(){
+  const inp=document.getElementById('chat-in');
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';ah(inp);
+  addMsg('chat-msgs','u',txt);
+  const tid=showTyping('chat-msgs');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys_chat(),messages:[...S.history,{role:'user',content:txt}]})});
+    const d=await r.json();
+    removeTyping(tid);
+    const rep=d.content?.[0]?.text||'申し訳ありません。もう一度お試しください。';
+    addMsg('chat-msgs','ai',rep);
+    S.history.push({role:'user',content:txt},{role:'assistant',content:rep});
+    if(S.history.length>20)S.history=S.history.slice(-20);
+    DB.addLog({id:uid(),date:today(),time:nowt(),staffName:S.name,role:S.role,type:'chat',content:txt,aiResponse:rep.slice(0,200),sev:'low',tags:['チャット']});
+  }catch{removeTyping(tid);addMsg('chat-msgs','ai','⚠️ 接続エラーです。APIキーをご確認ください。\n\n(Demo mode — Anthropic API key required for AI responses.)');}
+}
+
+/* ══════════ CARE ══════════ */
+let careActive=false;
+function startCare(type,el){
+  S.careType=type;
+  careActive=true;
+  document.querySelectorAll('#care-types .ctype').forEach(b=>b.classList.add('dim'));
+  el.classList.remove('dim');
+  document.getElementById('care-msgs').style.display='flex';
+  document.getElementById('care-foot').style.display='block';
+  const openers={
+    kasuhara:'カスタマーハラスメントについて話してくれるんですね。それはつらい経験だったと思います。\nどんなことがあったか、できる範囲で聞かせてもらえますか？',
+    gutti:'愚痴や不満、ちゃんと聞きますよ😊\n遠慮しないで全部話してください。ここは安全な場所ですから。',
+    stress:'お疲れのようですね。今日はどんなことがありましたか？\n少し楽になれるよう、一緒に考えましょう。',
+    other:'どんなことでも聞きますよ。\n今、気になっていることや相談したいことを話してください。',
+  };
+  addMsg('care-msgs','ai',openers[type]||openers.other,null,true);
+  document.getElementById('care-msgs').scrollTop=99999;
+}
+function setSev(s,btn){
+  S.sev=s;
+  document.querySelectorAll('.sev-p').forEach(b=>{b.classList.remove('on','lo','me','hi');});
+  btn.classList.add('on',{low:'lo',med:'me',high:'hi'}[s]);
+}
+async function sendCare(){
+  const inp=document.getElementById('care-in');
+  const txt=inp.value.trim();if(!txt)return;
+  if(!careActive){toast('種別を選んでください','err');return;}
+  inp.value='';ah(inp);
+  addMsg('care-msgs','u',txt);
+  const tid=showTyping('care-msgs');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys_care(),messages:[...S.careHistory,{role:'user',content:txt}]})});
+    const d=await r.json();
+    removeTyping(tid);
+    const rep=d.content?.[0]?.text||'';
+    addMsg('care-msgs','ai',rep,null,true);
+    S.careHistory.push({role:'user',content:txt},{role:'assistant',content:rep});
+    if(S.careHistory.length>20)S.careHistory=S.careHistory.slice(-20);
+    const tl={kasuhara:'カスハラ',gutti:'愚痴',stress:'ストレス',other:'相談'};
+    DB.addLog({id:uid(),date:today(),time:nowt(),staffName:S.name,role:S.role,type:S.careType,content:txt,aiResponse:rep.slice(0,200),sev:S.sev,tags:[tl[S.careType],S.sev==='high'?'要対応':''].filter(Boolean)});
+  }catch{removeTyping(tid);addMsg('care-msgs','ai','⚠️ 接続エラーです。');}
+}
+
+/* ══════════ MSG HELPERS ══════════ */
+function addMsg(cid,type,text,chips,isCare){
+  const c=document.getElementById(cid);if(!c)return;
+  const d=document.createElement('div');d.className='msg '+(type==='u'?'u':'ai');
+  const html=fmtText(text);
+  const chipHtml=chips?.length?`<div class="ai-sugg">${chips.map(c=>`<button class="sugg-btn" onclick="useQP(this)">${c}</button>`).join('')}</div>`:'';
+  const avGrad=isCare?'linear-gradient(135deg,var(--rose),#E05060)':'linear-gradient(135deg,var(--mint),var(--sky))';
+  const avSVG=`<svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:white"><path d="M12 2C6.5 2 3 6 3 10.5c0 2.5 1.2 4.7 3.2 6.2V20a1 1 0 001 1h9.6a1 1 0 001-1v-3.3c2-1.5 3.2-3.7 3.2-6.2C21 6 17.5 2 12 2z"/></svg>`;
+  if(type==='ai'){
+    d.innerHTML=`<div class="mav" style="background:${avGrad}">${avSVG}</div><div class="mc"><div class="mn">AI 上司</div><div class="bub">${html}${chipHtml}</div></div>`;
+  }else{
+    d.innerHTML=`<div class="mav" style="background:linear-gradient(135deg,var(--peach),#FF6B4A);font-size:13px;font-weight:800">${S.name.charAt(0)||'U'}</div><div class="mc"><div class="mn" style="text-align:right">${S.name}</div><div class="bub">${html}</div></div>`;
+  }
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function fmtText(t){
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').split('\n').map(l=>{
+    if(/^[・•\-]\s/.test(l))return`<li>${l.slice(2)}</li>`;
+    if(/^\d+[.。]\s/.test(l))return`<li>${l.replace(/^\d+[.。]\s/,'')}</li>`;
+    return l?`<p>${l}</p>`:'';
+  }).join('');
+}
+function showTyping(cid){
+  const c=document.getElementById(cid);
+  const id='ty'+Date.now();const d=document.createElement('div');d.className='msg ai';d.id=id;
+  d.innerHTML=`<div class="mav" style="background:linear-gradient(135deg,var(--mint),var(--sky))"><svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:white"><path d="M12 2C6.5 2 3 6 3 10.5c0 2.5 1.2 4.7 3.2 6.2V20a1 1 0 001 1h9.6a1 1 0 001-1v-3.3c2-1.5 3.2-3.7 3.2-6.2C21 6 17.5 2 12 2z"/></svg></div><div class="mc"><div class="mn">AI 上司</div><div class="bub"><div class="tdots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div></div></div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;return id;
+}
+function removeTyping(id){document.getElementById(id)?.remove();}
+function ck(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
+function cck(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCare();}}
+function ah(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+
+/* ══════════ VOICE ══════════ */
+const LC={ja:'ja-JP',en:'en-US',zh:'zh-CN',vi:'vi-VN'};
+function hasSR(){return'webkitSpeechRecognition'in window||'SpeechRecognition'in window;}
+function toggleVC(which){
+  const btnId=which==='care'?'vc-care':'vc-chat';
+  const inId=which==='care'?'care-in':'chat-in';
+  const key=which==='care'?'care':'chat';
+  const btn=document.getElementById(btnId);
+  if(S.rec[key]){S.SR?.stop();S.rec[key]=false;btn.classList.remove('rec');return;}
+  if(!hasSR()){toast('このブラウザは音声入力非対応です','err');return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  S.SR=new SR();S.SR.lang=LC[S.lang]||'ja-JP';
+  S.SR.onresult=e=>{document.getElementById(inId).value=e.results[0][0].transcript;ah(document.getElementById(inId));};
+  S.SR.onend=()=>{S.rec[key]=false;btn.classList.remove('rec');};
+  S.SR.start();S.rec[key]=true;btn.classList.add('rec');toast('🎤 話しかけてください…','ok');
+}
+function toggleRV(){
+  const btn=document.getElementById('rv-btn'),lbl=document.getElementById('rv-lbl'),st=document.getElementById('rv-st');
+  if(S.rec.rep){S.SR?.stop();S.rec.rep=false;btn.classList.remove('rec');lbl.textContent='音声で入力';st.textContent='';return;}
+  if(!hasSR()){toast('音声入力非対応','err');return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  S.SR=new SR();S.SR.lang=LC[S.lang]||'ja-JP';S.SR.continuous=true;S.SR.interimResults=true;
+  S.SR.onresult=e=>{let f='';for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)f+=e.results[i][0].transcript;if(f){const ta=document.getElementById('r-body');ta.value+=(ta.value?' ':'')+f;}};
+  S.SR.onend=()=>{S.rec.rep=false;btn.classList.remove('rec');lbl.textContent='音声で入力';st.textContent='';};
+  S.SR.start();S.rec.rep=true;btn.classList.add('rec');lbl.textContent='停止する';st.textContent='🔴 録音中…';
+}
+
+/* ══════════ REPORT ══════════ */
+function chk(el){el.classList.toggle('done');}
+async function aiSum(){
+  const b=document.getElementById('r-body').value,iss=document.getElementById('r-iss').value,h=document.getElementById('r-hand').value;
+  if(!b&&!iss&&!h){toast('内容を入力してください','err');return;}
+  toast('AIが整理中…','ok');
+  try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:`${S.name}の日報を管理者向けに簡潔に整理：\n報告:${b}\n問題:${iss}\n引継ぎ:${h}`}]})});const d=await r.json();const s=d.content?.[0]?.text;if(s){document.getElementById('r-body').value=s;toast('要約完了 ✓','ok');}}catch{toast('AI要約失敗','err');}
+}
+async function submitRep(){
+  const b=document.getElementById('r-body').value;if(!b){toast('報告内容を入力してください','err');return;}
+  const oc=document.querySelectorAll('#open-cl .done').length,ot=document.querySelectorAll('#open-cl .cr').length;
+  DB.addLog({id:uid(),date:today(),time:nowt(),staffName:S.name,role:S.role,type:'report',content:b,issues:document.getElementById('r-iss').value,handover:document.getElementById('r-hand').value,checkOpen:`${oc}/${ot}`,sev:'low',tags:['日報']});
+  toast(`✓ 日報保存（開店チェック ${oc}/${ot}）`,'ok');
+}
+
+/* ══════════ KNOWLEDGE ══════════ */
+const FAQS=[
+  {cat:'open',q:'開店前の準備手順を教えてください',a:'①スタッフ出勤確認 ②ホール・厨房清掃 ③食材・在庫確認 ④レジ・POSテスト ⑤予約リスト確認 ⑥空調・照明調整 ⑦身だしなみ確認。開店15分前には全員揃って最終確認しましょう。'},
+  {cat:'open',q:'閉店作業のチェックポイントは？',a:'レジ締め→食材保管・廃棄→厨房清掃→ホール・トイレ最終清掃→ゴミ出し→電気・ガス・水道確認→戸締まり・施錠。チェックリストを活用してください！'},
+  {cat:'service',q:'クレームが来たときの対応方法は？',a:'まずしっかりお話を聞いて共感。「ご不便をおかけして申し訳ございません」と誠意を伝えます。判断が難しいときは迷わず店長へ。対応後は必ずケアパネルか日報に記録を。'},
+  {cat:'service',q:'外国語のお客様への対応は？',a:'笑顔と誠実な態度が一番大切です。Google翻訳アプリを活用して指差しでコミュニケーションを。困ったら迷わず店長を呼んでください。'},
+  {cat:'inventory',q:'在庫が少なくなったときの連絡方法は？',a:'日報・報告から音声または文字で「〇〇が△個になりました」と記録してください。AIが整理して店長・オーナーへ通知されます。急ぎはLINEグループへも連絡を。'},
+  {cat:'inventory',q:'発注のルールを教えてください',a:'通常は週2回（月・木）の定期発注です。臨時発注は店長の承認が必要。発注書はGoogleフォームから、締め切りは発注日前日17時まで。'},
+  {cat:'emergency',q:'設備が故障したときはどうすればいいですか？',a:'まず安全確認（ガス・電気漏れ等）を行い、店長へ即連絡。状況写真を撮って日報に添付してください。お客様への影響が出る場合は丁寧に状況を説明します。'},
+  {cat:'emergency',q:'お客様が体調不良になった場合は？',a:'安全な場所にご案内して水を提供。症状が重い場合はすぐ119番通報、店長・オーナーへも即連絡。事実関係を記録して報告書を作成しましょう。'},
+  {cat:'training',q:'新人スタッフへ最初に教えることは？',a:'①店舗理念と挨拶のルール ②このナレッジBOTの使い方（困ったらまずAIへ）③基本的な開閉店作業 ④日報の書き方（音声入力がおすすめ）。最初の1週間は先輩とのペア勤務が安心です。'},
+  {cat:'training',q:'このBOTを使いこなすコツは？',a:'毎日のチェックリスト入力から習慣づけることが大切。「困ったらAIに聞く」癖をつけましょう。日報は音声入力が最も使いやすいですよ。'},
+];
+const catN={open:'開店・閉店',service:'接客',inventory:'在庫',emergency:'緊急',training:'研修'};
+const catC={open:'var(--mint)',service:'var(--sky)',inventory:'var(--lemon)',emergency:'var(--rose)',training:'var(--lav)'};
+const catBg={open:'var(--mint-lt)',service:'var(--sky-lt)',inventory:'var(--lemon-lt)',emergency:'var(--rose-lt)',training:'var(--lav-lt)'};
+let curKCat='all';
+function kCat(c,btn){curKCat=c;document.querySelectorAll('#cat-row .pill').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderFAQ();}
+function renderFAQ(){
+  const kw=(document.getElementById('kb-in')?.value||'').toLowerCase();
+  const list=document.getElementById('faq-list');if(!list)return;list.innerHTML='';
+  FAQS.filter(f=>(curKCat==='all'||f.cat===curKCat)&&(!kw||f.q.toLowerCase().includes(kw)||f.a.toLowerCase().includes(kw))).forEach(f=>{
+    const el=document.createElement('div');el.className='fc';
+    el.innerHTML=`<div class="fh" onclick="this.parentElement.classList.toggle('open')"><div class="fdot" style="background:${catC[f.cat]}"></div><span class="fq">${f.q}</span><span class="ftag" style="background:${catBg[f.cat]};color:${catC[f.cat]}">${catN[f.cat]||f.cat}</span><span class="farr"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div><div class="fa">${f.a}</div>`;
+    list.appendChild(el);
+  });
+}
+
+/* ══════════ ARCHIVE ══════════ */
+let archType='all';
+function archF(t,btn){archType=t;document.querySelectorAll('#av-all .pill').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderArch();}
+function archTab(tab,btn){
+  document.querySelectorAll('[id^="at-"]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('av-all').style.display=tab==='all'?'block':'none';
+  document.getElementById('av-staff').style.display=tab==='staff'?'block':'none';
+  document.getElementById('av-ai').style.display=tab==='ai'?'block':'none';
+  if(tab==='staff')renderStaffGrid();
+}
+function renderArch(){
+  const logs=DB.logs();
+  const kw=(document.getElementById('arch-kw')?.value||'').toLowerCase();
+  const dt=document.getElementById('arch-dt')?.value||'';
+  const filtered=logs.filter(l=>(archType==='all'||l.type===archType)&&(!kw||(l.content||'').toLowerCase().includes(kw)||(l.staffName||'').includes(kw))&&(!dt||l.date===dt));
+  // stats
+  const stats=document.getElementById('a-stats');
+  if(stats){
+    const k=logs.filter(l=>l.type==='kasuhara').length,g=logs.filter(l=>l.type==='gutti').length,s=logs.filter(l=>l.type==='stress').length,r=logs.filter(l=>l.type==='report').length;
+    stats.innerHTML=`<div class="asc"><div class="asn">${logs.length}</div><div class="asl">総記録</div></div><div class="asc"><div class="asn" style="color:var(--rose)">${k}</div><div class="asl">カスハラ</div></div><div class="asc"><div class="asn" style="color:var(--lav)">${g+s}</div><div class="asl">愚痴・ストレス</div></div><div class="asc"><div class="asn" style="color:var(--mint)">${r}</div><div class="asl">日報</div></div>`;
+  }
+  const tl=document.getElementById('a-timeline');if(!tl)return;
+  if(filtered.length===0){tl.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M2 10v10a1 1 0 001 1h18a1 1 0 001-1V10"/></svg><p>記録がまだありません</p></div>`;return;}
+  const tName={kasuhara:'カスハラ',gutti:'愚痴',stress:'ストレス',report:'日報',chat:'チャット',other:'相談'};
+  tl.innerHTML=filtered.slice(0,60).map(l=>`
+    <div class="a-item">
+      <div class="a-head">
+        <span class="a-badge ${l.type||'chat'}">${tName[l.type]||l.type}</span>
+        ${l.sev&&l.sev!=='low'?`<div class="a-sev ${l.sev==='high'?'high':'med'}"></div>`:''}
+        <span class="a-staff">${l.staffName||'?'}</span>
+        <span class="a-date">${l.date} ${l.time}</span>
+      </div>
+      <div class="a-text">${(l.content||'').slice(0,200)}${(l.content||'').length>200?'…':''}</div>
+      ${l.aiResponse?`<div class="a-ai">AI: ${l.aiResponse.slice(0,140)}…</div>`:''}
+    </div>`).join('');
+}
+function renderStaffGrid(){
+  const sm=DB.staff(),logs=DB.logs();
+  const grid=document.getElementById('staff-grid');if(!grid)return;
+  const entries=Object.entries(sm);
+  const colors=['linear-gradient(135deg,var(--peach),#FF6B4A)','linear-gradient(135deg,var(--mint),var(--sky))','linear-gradient(135deg,var(--lav),#9B8AE8)','linear-gradient(135deg,var(--lemon),#E0A030)'];
+  if(entries.length===0){grid.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z"/></svg><p>スタッフがいません</p></div>`;document.getElementById('staff-det').style.display='none';return;}
+  document.getElementById('staff-det').style.display='none';
+  grid.style.display='grid';
+  grid.innerHTML=entries.map(([id,info],i)=>{
+    const sl=logs.filter(l=>l.staffName===info.name);
+    const cl=sl.filter(l=>['kasuhara','gutti','stress'].includes(l.type));
+    return`<div class="sc" onclick="showStaffDet('${id}')">
+      <div class="sc-av" style="background:${colors[i%colors.length]}">${(info.name||'U').charAt(0)}</div>
+      <div class="sc-name">${info.name}</div>
+      <div class="sc-role">${{staff:'スタッフ',manager:'店長',owner:'オーナー'}[info.role]||info.role}</div>
+      <div class="sc-chips">
+        <span class="sc-chip">記録 ${sl.length}</span>
+        <span class="sc-chip" style="background:var(--rose-lt);color:var(--rose)">ケア ${cl.length}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function showStaffDet(id){
+  const sm=DB.staff(),logs=DB.logs();
+  const info=sm[id];if(!info)return;
+  const sl=logs.filter(l=>l.staffName===info.name);
+  document.getElementById('staff-grid').style.display='none';
+  const det=document.getElementById('staff-det');det.style.display='block';
+  const tName={kasuhara:'カスハラ',gutti:'愚痴',stress:'ストレス',report:'日報',chat:'チャット',other:'相談'};
+  det.innerHTML=`
+    <button class="chip mint" style="margin-bottom:14px" onclick="backToGrid()">← 一覧に戻る</button>
+    <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:3px">${info.name}</div>
+      <div style="font-size:11px;color:var(--text3)">${{staff:'スタッフ',manager:'店長',owner:'オーナー'}[info.role]||info.role} | 登録：${info.since}</div>
+      <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+        <span style="font-size:11px;padding:3px 10px;border-radius:var(--r);background:var(--bg)">記録 ${sl.length}件</span>
+        <span style="font-size:11px;padding:3px 10px;border-radius:var(--r);background:var(--rose-lt);color:var(--rose)">ケア ${sl.filter(l=>['kasuhara','gutti','stress'].includes(l.type)).length}件</span>
+        <span style="font-size:11px;padding:3px 10px;border-radius:var(--r);background:var(--mint-lt);color:var(--mint)">日報 ${sl.filter(l=>l.type==='report').length}件</span>
+      </div>
+    </div>
+    ${sl.length===0?`<div class="empty"><p>まだ記録がありません</p></div>`:sl.slice(0,30).map(l=>`<div class="a-item"><div class="a-head"><span class="a-badge ${l.type||'chat'}">${tName[l.type]||l.type}</span>${l.sev&&l.sev!=='low'?`<div class="a-sev ${l.sev==='high'?'high':'med'}"></div>`:''}<span class="a-date">${l.date} ${l.time}</span></div><div class="a-text">${(l.content||'').slice(0,200)}</div>${l.aiResponse?`<div class="a-ai">AI: ${l.aiResponse.slice(0,120)}…</div>`:''}</div>`).join('')}
+  `;
+}
+function backToGrid(){document.getElementById('staff-grid').style.display='grid';document.getElementById('staff-det').style.display='none';}
+async function archQuery(){
+  const q=document.getElementById('arch-q').value.trim();if(!q){toast('質問を入力してください','err');return;}
+  const res=document.getElementById('arch-ai-res');
+  res.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:14px;color:var(--text3)"><div class="spinner"></div>分析中…</div>`;
+  const logs=DB.logs();
+  const logsStr=logs.slice(0,100).map(l=>`[${l.date} ${l.time}] ${l.staffName}/${l.type}/深刻:${l.sev||'-'}\n${l.content}`).join('\n---\n');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`${S.company}のスタッフ記録データ：\n${logsStr||'（データなし）'}\n\n質問：${q}\n\n温かい言葉で、具体的に答えてください。データがない場合はその旨を伝えてください。`}]})});
+    const d=await r.json();const rep=d.content?.[0]?.text||'回答を取得できませんでした。';
+    res.innerHTML=`<div class="ai-q-result"><div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">AI 分析結果</div><div style="font-size:13px;color:var(--text);line-height:1.8">${fmtText(rep)}</div></div>`;
+  }catch{res.innerHTML=`<div style="color:var(--rose);font-size:12px;padding:12px">⚠️ 接続エラーです。</div>`;}
+}
+
+/* ══════════ DASHBOARD ══════════ */
+function updateDash(){
+  const logs=DB.logs();
+  const td=today();
+  document.getElementById('ds-rep').textContent=logs.filter(l=>l.date===td&&l.type==='report').length;
+  document.getElementById('ds-care').textContent=logs.filter(l=>['kasuhara','gutti','stress','other'].includes(l.type)).length;
+  document.getElementById('ds-chat').textContent=logs.filter(l=>l.type==='chat').length;
+  document.getElementById('ds-staff').textContent=Object.keys(DB.staff()).length;
+  const kh=logs.filter(l=>l.type==='kasuhara').length,gt=logs.filter(l=>l.type==='gutti').length,st=logs.filter(l=>l.type==='stress').length;
+  const mx=Math.max(kh,gt,st,1);
+  document.getElementById('b-kh').style.width=(kh/mx*100)+'%';document.getElementById('bv-kh').textContent=kh;
+  document.getElementById('b-gt').style.width=(gt/mx*100)+'%';document.getElementById('bv-gt').textContent=gt;
+  document.getElementById('b-st').style.width=(st/mx*100)+'%';document.getElementById('bv-st').textContent=st;
+  // activity
+  const al=document.getElementById('act-list');
+  const tl2={kasuhara:'カスハラを記録',gutti:'愚痴を記録',stress:'ストレスを記録',report:'日報を提出',chat:'AIに相談',other:'相談を記録'};
+  const dc={kasuhara:'var(--rose)',gutti:'var(--lav)',stress:'var(--sky)',report:'var(--mint)',chat:'var(--peach)',other:'var(--mint)'};
+  if(al)al.innerHTML=logs.length?logs.slice(0,5).map(l=>`<div class="ar"><div class="ad" style="background:${dc[l.type]||'var(--border)'}"></div><div><div class="at">${l.staffName}さんが${tl2[l.type]||'記録'}しました</div><div class="ati">${l.date} ${l.time}</div></div></div>`).join(''):`<div class="ar"><div class="ad" style="background:var(--border)"></div><div><div class="at">まだ記録がありません</div></div></div>`;
+  // rep list
+  const rl=document.getElementById('rep-list');
+  const reps=logs.filter(l=>l.type==='report').slice(0,4);
+  if(rl)rl.innerHTML=reps.length?reps.map(l=>`<div class="rrow"><span class="rst3" style="background:var(--mint-lt);color:var(--mint)">${l.staffName}</span><span class="rtxt">${(l.content||'').slice(0,55)}…</span><span class="rtim">${l.time}</span></div>`).join(''):`<div style="font-size:12px;color:var(--text3);padding:6px">まだ日報がありません</div>`;
+}
+function dTab(tab,btn){
+  document.querySelectorAll('[id^="dt-"]').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  document.getElementById('dv-ov').style.display=tab==='ov'?'block':'none';
+  document.getElementById('dv-ins').style.display=tab==='ins'?'block':'none';
+}
+async function genInsight(){
+  const btn=document.querySelector('.ins-btn');btn.innerHTML=`<div class="spinner"></div> 分析中…`;btn.disabled=true;
+  const logs=DB.logs();
+  const logsStr=logs.slice(0,100).map(l=>`[${l.date}] ${l.staffName}(${l.role})/${l.type}/深刻:${l.sev||'-'}/${(l.content||'').slice(0,80)}`).join('\n');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,
+        system:`優秀な経営コンサルタントとして${S.company}の経営者向け提言をJSONで返してください。形式：[{"title":"タイトル","icon":"絵文字","color":"mint|peach|lav|sky","body":"説明2〜3文","action":"具体的アクション"}]。3〜5件。JSONのみ返すこと。`,
+        messages:[{role:'user',content:`分析データ：\n${logsStr||'（まだデータがありません）'}\n\n上記を踏まえて経営改善提言をください。`}]})});
+    const d=await r.json();let txt=d.content?.[0]?.text||'[]';txt=txt.replace(/```json?|```/g,'').trim();
+    let items;try{items=JSON.parse(txt);}catch{items=[{title:'分析完了',icon:'💡',color:'mint',body:'データに基づいた提言を生成しました。継続的に記録を蓄積することでより精度が上がります。',action:'スタッフに記録を促してください'}];}
+    const cm={mint:'linear-gradient(135deg,var(--mint),#3BBCAE)',peach:'linear-gradient(135deg,var(--peach),#FF6B4A)',lav:'linear-gradient(135deg,var(--lav),#9B8AE8)',sky:'linear-gradient(135deg,var(--sky),#4A9EE0)'};
+    document.getElementById('ins-cards').innerHTML=items.map(it=>`<div class="ic"><div class="ic-head"><div class="ic-ico" style="background:${cm[it.color]||cm.mint}"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:white"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 4v8M12 17h.01"/></svg></div><div class="ic-ttl">${it.icon||'💡'} ${it.title}</div></div><div class="ic-body">${it.body}</div><button class="ic-act" onclick="chatFromInsight('${(it.action||'').replace(/'/g,'&apos;')}')">→ ${it.action||'詳しく聞く'}</button></div>`).join('');
+  }catch{document.getElementById('ins-cards').innerHTML=`<div style="color:var(--rose);font-size:12px;padding:14px">⚠️ 接続エラーです。</div>`;}
+  btn.innerHTML=`<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:var(--lav)"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 4v8M12 17h.01"/></svg> 再分析する`;btn.disabled=false;
+}
+function chatFromInsight(action){gp('chat',document.querySelector('.rib'));document.getElementById('chat-in').value=action;sendChat();}
+
+/* ══════════ TOAST ══════════ */
+function toast(msg,type='ok'){const r=document.getElementById('toast-root');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;r.appendChild(el);setTimeout(()=>el.remove(),3200);}
+
+/* ══════════ INIT ══════════ */
+window.addEventListener('DOMContentLoaded',()=>{loadLoginStaff();});
+</script>
+</body>
+</html>
